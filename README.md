@@ -77,12 +77,12 @@ Node.js supports two types of API functions:
    2. **Asynchronous:**
    - These API functions are used for non-blocking code. They do not block the execution of the program, allowing each command to be executed after the previous one, even if the previous command has not completed. Asynchronous functions are typically used for performing heavy tasks.
 
-5. ### What is the difference between Synchronous and Asynchronous Functions
+5. ### What is the difference between Synchronous and Asynchronous Functions?
 
-**Synchronous Function:**
+   **Synchronous Function:**
    - These functions block the execution of the program during an operation, also known as blocking operations. They are used for lightweight tasks.
 
-**Asynchronous Function:**
+   **Asynchronous Function:**
    - These functions do not block the execution of the program. Each command is executed after the previous one, even if the previous command has not computed the result. They are used for performing heavy tasks.
 
 
