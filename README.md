@@ -71,10 +71,10 @@ Yes, Node.js is a single-threaded application as it is built using the single-th
 
 Node.js supports two types of API functions:
 
-   1. **Synchronous:**
+   **Synchronous:**
    - These API functions are used for blocking code, meaning they block the execution of the program until the operation is completed. They are suitable for performing lightweight tasks.
 
-   2. **Asynchronous:**
+  **Asynchronous:**
    - These API functions are used for non-blocking code. They do not block the execution of the program, allowing each command to be executed after the previous one, even if the previous command has not completed. Asynchronous functions are typically used for performing heavy tasks.
 
 5. ### What is the difference between Synchronous and Asynchronous Functions?
