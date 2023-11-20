@@ -18,25 +18,25 @@ Node.js is an open-source, cross-platform JavaScript runtime environment that al
 
 ## Key Features
 
-1. **Asynchronous and Event-Driven:**
+   1. **Asynchronous and Event-Driven:**
    - Node.js handles asynchronous operations efficiently using an event-driven, non-blocking I/O model. This allows developers to build scalable and performant applications that handle many concurrent connections.
 
-2. **Single-Threaded:**
+   2. **Single-Threaded:**
    - Despite being single-threaded, Node.js uses an event loop to manage asynchronous operations without blocking the execution of other code. This design enables the development of highly responsive applications.
 
-3. **NPM (Node Package Manager):**
+   3. **NPM (Node Package Manager):**
    - Node.js comes with npm, a package manager facilitating the installation, management, and sharing of third-party libraries and tools. The npm ecosystem is extensive, promoting code reuse and collaboration within the Node.js community.
 
-4. **Cross-Platform:**
+   4. **Cross-Platform:**
    - Node.js is designed to run on various operating systems, including Windows, macOS, and Linux, making it a cross-platform technology.
 
-5. **Server-Side JavaScript:**
+   5. **Server-Side JavaScript:**
    - Node.js allows developers to use JavaScript on the server side, unifying the development language across the entire application stack. This can simplify development processes and promote consistency in code.
 
-6. **Large and Active Community:**
+   6. **Large and Active Community:**
    - Node.js has a large and active community of developers contributing to the growth of the platform. The community support is evident in the availability of numerous libraries and frameworks that enhance Node.js development.
 
-7. **Versatility:**
+   7. **Versatility:**
    - Node.js is versatile and applicable for various types of applications, including web servers, APIs, microservices, real-time applications (e.g., chat applications, online gaming), and more.
 
 Node.js is often used with frameworks like Express.js to simplify the process of building web applications. It has gained widespread popularity and is adopted by both small startups and large enterprises due to its performance, scalability, and effective handling of concurrent connections.
@@ -71,10 +71,10 @@ Yes, Node.js is a single-threaded application as it is built using the single-th
 
 Node.js supports two types of API functions:
 
-1. **Synchronous:**
+   1. **Synchronous:**
    - These API functions are used for blocking code, meaning they block the execution of the program until the operation is completed. They are suitable for performing lightweight tasks.
 
-2. **Asynchronous:**
+   2. **Asynchronous:**
    - These API functions are used for non-blocking code. They do not block the execution of the program, allowing each command to be executed after the previous one, even if the previous command has not completed. Asynchronous functions are typically used for performing heavy tasks.
 
 5. ### What is the difference between Synchronous and Asynchronous Functions
