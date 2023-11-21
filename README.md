@@ -11,6 +11,8 @@
 | 3   | [ Is Node.js single-threaded?](#is-nodejs-single-threaded)                                                                                                    |
 | 4   | [ What kind of API function is supported by Node.js?](#types-of-api-functions-in-nodejs)                                                                      |
 | 5   | [ What is the difference between Synchronous and Asynchronous functions?](#what-is-the-difference-between-synchronous-and-asynchronous-functions)             |
+| 6   | [ What is middleware?](#what-is-middleware)                                                                                                                   |
+| 7   | [ how Node.js handles concurrency ?](#how-nodejs-handle-concurrency)                                                                                          |
 
 1. ### What is Node.js?
 
@@ -77,6 +79,8 @@ Node.js supports two types of API functions:
   **Asynchronous:**
    - These API functions are used for non-blocking code. They do not block the execution of the program, allowing each command to be executed after the previous one, even if the previous command has not completed. Asynchronous functions are typically used for performing heavy tasks.
 
+**[⬆ Back to Top](#table-of-contents)**
+
 5. ### What is the difference between Synchronous and Asynchronous Functions?
 
    **Synchronous Function:**
@@ -84,5 +88,20 @@ Node.js supports two types of API functions:
 
    **Asynchronous Function:**
    - These functions do not block the execution of the program. Each command is executed after the previous one, even if the previous command has not computed the result. They are used for performing heavy tasks.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+6. ### What is middleware?
+   - Middleware is the function that works between the request and the response cycle. Middleware gets executed after the server receives the request and before the controller sends the response.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+7. ### How Node.js handle concurrency?
+   - Node js is an open-source virtual machine that uses javascript as its scripting language. Despite being single-threaded, it is one of the most popular web technologies. The reason why node js is popular despite being single-threaded is the asynchronous nature that makes it possible to handle concurrency and perform multiple I/O operations at the same time. Node js uses an event loop to maintain concurrency and perform non-blocking I/O operations.
+
+As soon as Node js starts, it initializes an event loop. The event loop works on a queue (which is called an event queue) and performs tasks in FIFO(First In First Out) order. It executes a task only when there is no ongoing task in the call stack. The call stack works in LIFO(Last In First Out) order. The event loop continuously checks the call stack to check if there is any task that needs to be run. Now whenever the event loop finds any function, it adds it to the stack and runs in order.  
+
+**[⬆ Back to Top](#table-of-contents)**
+
 
 
