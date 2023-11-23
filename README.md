@@ -13,7 +13,8 @@
 | 5   | [What is the difference between Synchronous and Asynchronous functions?](#what-is-the-difference-between-synchronous-and-asynchronous-functions)              |
 | 6   | [What is middleware?](#what-is-middleware)                                                                                                                    |
 | 7   | [how Node.js handles concurrency ?](#how-nodejs-handle-concurrency)                                                                                           |
-| 8   | [What do you mean by event loop in Node.js?](#what-do-you-mean-by-event-loop-in-nodejs)                                                                      |
+| 8   | [What do you mean by event loop in Node.js?](#what-do-you-mean-by-event-loop-in-nodejs)                                                                       |
+| 9   | [What is the order in which control flow statements get executed?](#what-is-the-order-in-which-control-flow-statements-get-executed)                          |
 
 1. ### What is Node.js?
 
@@ -106,6 +107,17 @@ As soon as Node js starts, it initializes an event loop. The event loop works on
 
 8. ### What do you mean by event loop in Node.js?
    -Event Loop in Node.js is used to handle callbacks. It is helpful in performing non-blocking I/O operations. An event loop is an endless loop, which waits for tasks, executes them, and then sleeps until it receives more tasks.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+9. ### What is the order in which control flow statements get executed?
+    - ### The order in which the statements are executed is as follows:
+
+   - Execution and queue handling
+   - Collection of data and storing it
+   - Handling concurrency
+   - Executing the next lines of code
+
 
 **[⬆ Back to Top](#table-of-contents)**
 
