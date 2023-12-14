@@ -15,6 +15,11 @@
 | 7   | [how Node.js handles concurrency ?](#how-nodejs-handle-concurrency)                                                                                           |
 | 8   | [What do you mean by event loop in Node.js?](#what-do-you-mean-by-event-loop-in-nodejs)                                                                       |
 | 9   | [What is the order in which control flow statements get executed?](#what-is-the-order-in-which-control-flow-statements-get-executed)                          |
+| 10  | [What are the main disadvantages of Node.js?](#what-are-the-main-disadvantages-of-nodejs)                                                                     |
+| 11  | [What is REPL in Node.js?](#what-is-repl-in-nodejs)                                                                                                           |
+| 12  | [How to import a module in Node.js?](#how-to-import-a-module-in-nodejs)                                                                                       |
+| 13  | [What is the difference between Node.js and AJAX?](#what-is-the-difference-between-nodejs-and-ajax)                                                          |
+| 13  | [What is package.json in Node.js?](#what-is-packagejson-in-nodejs)                                                          |
 
 1. ### What is Node.js?
 
@@ -118,8 +123,29 @@ As soon as Node js starts, it initializes an event loop. The event loop works on
    - Handling concurrency
    - Executing the next lines of code
 
+**[⬆ Back to Top](#table-of-contents)**
+
+10. ### What are the main disadvantages of Node.js?
+- Since Node.js is single-threaded so multi-threaded engines are better and can handle tasks more efficiently. Also, we do not use relational databases with Node.js like MySQL mostly non-relational databases like MongoDB is used.
 
 **[⬆ Back to Top](#table-of-contents)**
 
+11. ### What is REPL in Node.js?
+    - REPL in Node.js stands for Read, Evaluate, Print, and Loop. It is a computer environment similar to the shell which is useful for writing and debugging code as it executes the code in on go.
 
+**[⬆ Back to Top](#table-of-contents)**
 
+12. ### How to import a module in Node.js?
+    - We use the require module to import the External libraries in Node.js. The result returned by require() is stored in a variable which is used to invoke the functions using the dot notation.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+13. ### What is the difference between Node.js and AJAX?
+    - Node.js is a JavaScript runtime environment that runs on the server side whereas AJAX is a client-side programming language that runs on the browser.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+14. ### What is package.json in Node.js?
+    - package.json is a file that is used to store the metadata of all the contents of the project. It is used to describe the module used, run commands, and other useful information about the project.
+
+**[⬆ Back to Top](#table-of-contents)**
