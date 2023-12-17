@@ -19,7 +19,10 @@
 | 11  | [What is REPL in Node.js?](#what-is-repl-in-nodejs)                                                                                                           |
 | 12  | [How to import a module in Node.js?](#how-to-import-a-module-in-nodejs)                                                                                       |
 | 13  | [What is the difference between Node.js and AJAX?](#what-is-the-difference-between-nodejs-and-ajax)                                                          |
-| 13  | [What is package.json in Node.js?](#what-is-packagejson-in-nodejs)                                                          |
+| 14  | [What is package.json in Node.js?](#what-is-packagejson-in-nodejs)                                                          |
+| 15  | [What are promises in Node.js?](#what-are-promises-in-nodejs)                                                          |
+| 16  | [What is event-driven programming in Node.js?](#what-is-event-driven-programming-in-nodejs)                                                          |
+| 17  | [What is buffer in Node.js?](#what-is-buffer-in-nodejs)                                                          |
 
 1. ### What is Node.js?
 
@@ -147,5 +150,24 @@ As soon as Node js starts, it initializes an event loop. The event loop works on
 
 14. ### What is package.json in Node.js?
     - package.json is a file that is used to store the metadata of all the contents of the project. It is used to describe the module used, run commands, and other useful information about the project.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+15. ### What are promises in Node.js?
+    - A promise is basically an advancement of callbacks in NodeJS. In other words, a promise is a JavaScript object which is used to handle all the asynchronous data operations. While developing an application you may encounter that you are using a lot of nested callback functions which causes a problem of callback hell. Promises solve this problem of callback hell.
+
+
+**[⬆ Back to Top](#table-of-contents)**
+
+16. ### What is event-driven programming in Node.js?
+    -  Event-driven programming is used to synchronize the occurrence of multiple events and to make the program as simple as possible. The basic components of an Event-Driven Program are:
+
+- A callback function ( called an event handler) is called when an event is triggered.
+- An event loop that listens for event triggers and calls the corresponding event handler for that event.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+17. ### What is buffer in Node.js?
+    - The Buffer class in Node.js is used to perform operations on raw binary data. Generally, Buffer refers to the particular memory location in memory. Buffer and array have some similarities, but the difference is array can be any type, and it can be resizable. Buffers only deal with binary data, and it can not be resizable. Each integer in a buffer represents a byte. console.log() function is used to print the Buffer instance.
 
 **[⬆ Back to Top](#table-of-contents)**
