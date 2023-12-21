@@ -23,6 +23,9 @@
 | 15  | [What are promises in Node.js?](#what-are-promises-in-nodejs)                                                          |
 | 16  | [What is event-driven programming in Node.js?](#what-is-event-driven-programming-in-nodejs)                                                          |
 | 17  | [What is buffer in Node.js?](#what-is-buffer-in-nodejs)                                                          |
+| 18  | [What are streams in Node.js?](#what-are-streams-in-nodejs)                                                          |
+| 19  | [Explain crypto module in Node.js](#explain-crypto-module-in-nodejs)                                                          |
+| 20  | [What is callback hell?](#what-is-callback-hell)                                                          |
 
 1. ### What is Node.js?
 
@@ -169,5 +172,21 @@ As soon as Node js starts, it initializes an event loop. The event loop works on
 
 17. ### What is buffer in Node.js?
     - The Buffer class in Node.js is used to perform operations on raw binary data. Generally, Buffer refers to the particular memory location in memory. Buffer and array have some similarities, but the difference is array can be any type, and it can be resizable. Buffers only deal with binary data, and it can not be resizable. Each integer in a buffer represents a byte. console.log() function is used to print the Buffer instance.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+18. ### What are streams in Node.js?
+- Streams are a type of data-handling method and are used to read or write input into output sequentially. Streams are used to handle reading/writing files or exchanging information in an efficient way. The stream module provides an API for implementing the stream interface. Examples of the stream object in Node.js can be a request to an HTTP server and process.stdout are both stream instances.
+
+
+**[⬆ Back to Top](#table-of-contents)**
+
+19. ### Explain crypto module in Node.js?
+    -The crypto module is used for encrypting, decrypting, or hashing any type of data. This encryption and decryption basically help to secure and add a layer of authentication to the data. The main use case of the crypto module is to convert the plain readable text to an encrypted format and decrypt it when required.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+20. ### What is callback hell?
+   - Callback hell is an issue caused due to a nested callback. This causes the code to look like a pyramid and makes it unable to read To overcome this situation we use promises.
 
 **[⬆ Back to Top](#table-of-contents)**
