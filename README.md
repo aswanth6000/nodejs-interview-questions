@@ -26,6 +26,7 @@
 | 18  | [What are streams in Node.js?](#what-are-streams-in-nodejs)                                                          |
 | 19  | [Explain crypto module in Node.js](#explain-crypto-module-in-nodejs)                                                          |
 | 20  | [What is callback hell?](#what-is-callback-hell)                                                          |
+| 21  | [Explain how the npm package manager works What are some common commands and best practices when working with npm?](#Explain-how-the-npm-package-manager-works-What-are-some-common-commands-and-best-practices-when-working-with-npm?)                                                          |
 
 1. ### What is Node.js?
 
@@ -188,5 +189,10 @@ As soon as Node js starts, it initializes an event loop. The event loop works on
 
 20. ### What is callback hell?
    - Callback hell is an issue caused due to a nested callback. This causes the code to look like a pyramid and makes it unable to read To overcome this situation we use promises.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+21. ### Explain how the npm package manager works What are some common commands and best practices when working with npm?
+    - The Node Package Manager (npm) is a command-line tool and online repository for managing Node.js packages and their dependencies. It simplifies the process of installing, sharing, and managing third-party libraries in Node.js projects. To start using npm, developers typically initialize a project using npm init, which creates a package.json file to store project metadata and dependencies. Common npm commands include npm install to install dependencies, npm install <package-name> to add a specific package, and npm start to execute the script specified in the "scripts" section of the package.json. Best practices involve keeping dependencies up-to-date using npm outdated, using semantic versioning for package versions, and employing the --save or --save-dev flags to update the package.json file with installed dependencies. Additionally, developers often use npm scripts for defining custom tasks and leverage the npm audit command to identify and fix security vulnerabilities in dependencies. Regularly updating packages and adhering to versioning conventions contribute to maintaining a stable and secure Node.js project.
 
 **[⬆ Back to Top](#table-of-contents)**
