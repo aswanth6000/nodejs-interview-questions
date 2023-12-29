@@ -28,6 +28,8 @@
 | 20  | [What is callback hell?](#what-is-callback-hell)                                                          |
 | 21  | [Explain how the npm package manager works What are some common commands and best practices when working with npm?](#Explain-how-the-npm-package-manager-works-What-are-some-common-commands-and-best-practices-when-working-with-npm?)                                                          |
 | 22  | [What is a cluster in Node.js?](#what-is-cluster-in-nodejs?)                                                          |
+| 22  | [What is a cluster in Node.js?](#what-is-cluster-in-nodejs?)                                                          |
+| 23  | [Explain some of the cluster methods in Node.js](#explain-some-of-the-cluster-methods-in-nodejs?)                                                          |
 
 1. ### What is Node.js?
 
@@ -198,7 +200,18 @@ As soon as Node js starts, it initializes an event loop. The event loop works on
 
 **[⬆ Back to Top](#table-of-contents)**
 
+
+
 22. ### What is a cluster in Node.js?
     - Due to a single thread in node.js, it handles memory more efficiently because there are no multiple threads due to which no thread management is needed. Now, to handle workload efficiently and to take advantage of computer multi-core systems, cluster modules are created that provide us the way to make child processes that run simultaneously with a single parent process.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+23. ### Explain some of the cluster methods in Node.js
+    - Fork(): It creates a new child process from the master. The isMaster returns true if the current process is master or else false.
+- isWorker: It returns true if the current process is a worker or else false.
+- process: It returns the child process which is global.
+- send(): It sends a message from worker to master or vice versa. 
+- kill(): It is used to kill the current worker.
 
 **[⬆ Back to Top](#table-of-contents)**
