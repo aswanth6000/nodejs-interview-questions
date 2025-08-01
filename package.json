@@ -1,0 +1,26 @@
+{
+  "name": "nodejs-interview-questions",
+  "version": "1.0.0",
+  "description": "> Click :star:if you like the project and follow [@Aswanth Alakkadan](https://www.linkedin.com/in/aswanthalakkadan/) for more updates. ----",
+  "main": "generate-daily.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aswanth6000/nodejs-interview-questions.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/aswanth6000/nodejs-interview-questions/issues"
+  },
+  "homepage": "https://github.com/aswanth6000/nodejs-interview-questions#readme",
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "openai": "^5.11.0",
+    "slugify": "^1.6.6"
+  }
+}
