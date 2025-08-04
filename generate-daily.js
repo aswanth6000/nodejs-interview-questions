@@ -77,7 +77,9 @@ const appendDailyQnA = async (topic = "Node.js", count = 10) => {
     : "";
 
   // Get current max question number from TOC
-  const tocMatch = existingContent.match(/\|\s*(\d+)\s*\|\s*\[.*?\]\(#.*?\)\s*\|/g);
+  const tocMatch = existingContent.match(
+    /\|\s*(\d+)\s*\|\s*\[.*?\]\(#.*?\)\s*\|/g
+  );
   const currentQuestionNumber = tocMatch
     ? Math.max(...tocMatch.map((line) => parseInt(line.match(/\d+/)?.[0])))
     : 0;
@@ -122,8 +124,8 @@ const appendDailyQnA = async (topic = "Node.js", count = 10) => {
   if (appended > 0) {
     // Insert new TOC rows after the last TOC line
     const updatedTOCContent = existingContent.replace(
-      /(\|[-|]+\n)((?:\|.*\n)*?)/,
-      (_, separator, tocLines) => `${separator}${tocLines}${newTOC}`
+      /(### Table of Contents\s*\n\s*\| No\..+?\n\|[-| ]+\|\n)((?:\|.*\|\n)*)/,
+      (_, header, rows) => `${header}${rows}${newTOC}`
     );
 
     const finalContent = updatedTOCContent + "\n" + newQnA;
@@ -134,6 +136,5 @@ const appendDailyQnA = async (topic = "Node.js", count = 10) => {
     console.log("🚫 No new questions added (all were duplicates)");
   }
 };
-
 
 appendDailyQnA("Node.js", 10);
