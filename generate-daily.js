@@ -16,7 +16,7 @@ const openai = new OpenAI({
   baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
 });
 
-const filePath = "nodejs-advanced.md";
+const filePath = "README.md";
 
 const getQuestions = async (topic, count = 10) => {
   const prompt = `
@@ -75,6 +75,14 @@ const appendDailyQnA = async (topic = "Node.js", count = 10) => {
   const existingContent = fs.existsSync(filePath)
     ? fs.readFileSync(filePath, "utf8")
     : "";
+
+  // Get current max question number from TOC
+  const tocMatch = existingContent.match(/\|\s*(\d+)\s*\|\s*\[.*?\]\(#.*?\)\s*\|/g);
+  const currentQuestionNumber = tocMatch
+    ? Math.max(...tocMatch.map((line) => parseInt(line.match(/\d+/)?.[0])))
+    : 0;
+
+  // Extract existing slugs to prevent duplicates
   const seenSlugs = new Set(
     existingContent.match(/\(#(.+?)\)/g)?.map((m) => m.slice(2, -1)) || []
   );
@@ -84,6 +92,7 @@ const appendDailyQnA = async (topic = "Node.js", count = 10) => {
 
   const questions = await getQuestions(topic, count);
   let appended = 0;
+  let qNum = currentQuestionNumber + 1;
 
   for (const question of questions) {
     const slug = slugify(question, { lower: true });
@@ -98,24 +107,33 @@ const appendDailyQnA = async (topic = "Node.js", count = 10) => {
     console.log(`🧠 Generating: ${question}`);
     const answer = await getAnswer(question);
 
-    newTOC += `| ${Date.now()} | [${question}](#${slug}) |\n`;
-    newQnA += `## ${question}\n\n${answer}\n\n---\n\n`;
+    // Append to TOC
+    newTOC += `| ${qNum} | [${question}](#${slug}) |\n`;
+
+    // Append formatted QnA
+    newQnA += `\n${qNum}. ### ${question}\n\n${answer}\n\n**[⬆ Back to Top](#table-of-contents)**\n\n`;
 
     appended++;
+    qNum++;
+
     if (appended >= count) break;
   }
 
   if (appended > 0) {
-    // Insert new TOC rows and QnA at end
-    const updated = existingContent.replace(
-      /(## Table of Contents\n\n\| No.+?\n\|[-|]+\n)/,
-      `$1${newTOC}`
+    // Insert new TOC rows after the last TOC line
+    const updatedTOCContent = existingContent.replace(
+      /(\|[-|]+\n)((?:\|.*\n)*?)/,
+      (_, separator, tocLines) => `${separator}${tocLines}${newTOC}`
     );
-    fs.writeFileSync(filePath, updated + "\n" + newQnA, "utf8");
+
+    const finalContent = updatedTOCContent + "\n" + newQnA;
+
+    fs.writeFileSync(filePath, finalContent, "utf8");
     console.log(`✅ Appended ${appended} questions`);
   } else {
     console.log("🚫 No new questions added (all were duplicates)");
   }
 };
+
 
 appendDailyQnA("Node.js", 10);
