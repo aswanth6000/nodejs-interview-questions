@@ -25,7 +25,8 @@ const getQuestions = async (topic, count = 10) => {
     Generate exactly ${count} **unique** technical interview questions for the topic: "${topic}".
 
     ### Guidelines:
-    - Questions should be a mix of **medium to advanced** difficulty.
+    - Questions should be a mix of **easy to advanced** difficulty.
+    - Easy Questions should test basic understanding
     - Medium-level questions should test practical understanding, usage, and common challenges.
     - Advanced-level questions should test deeper concepts, edge cases, or architecture/design thinking.
     - Avoid very basic or beginner-level questions.
@@ -59,6 +60,7 @@ const getAnswer = async (question) => {
     - Include a brief summary or takeaway at the end.
     - Format the response using proper markdown: use headings, bullet points, bold text, and code blocks.
     - Avoid assuming prior advanced knowledge. Start from first principles if needed.
+    - Keep the answer under 400 words MAXIMUM
 
     Make sure the answer is professional, concise, and educational.
 `;
