@@ -140,6 +140,15 @@
 | 131 | [Compare and contrast Promises and `async/await` for managing asynchronous operations in Node.js. In what situations might `async/await` be a more suitable choice?](#compare-and-contrast-promises-and-asyncawait-for-managing-asynchronous-operations-in-node.js.-in-what-situations-might-asyncawait-be-a-more-suitable-choice) |
 | 132 | [Elaborate on the concept of Non-blocking I/O in Node.js. How does it contribute to Node.js's performance characteristics, and what are its implications for application design?](#elaborate-on-the-concept-of-non-blocking-io-in-node.js.-how-does-it-contribute-to-node.js's-performance-characteristics-and-what-are-its-implications-for-application-design) |
 | 133 | [What are some critical security best practices you would implement when developing a production-ready Node.js web application to protect against common vulnerabilities?](#what-are-some-critical-security-best-practices-you-would-implement-when-developing-a-production-ready-node.js-web-application-to-protect-against-common-vulnerabilities) |
+| 134 | [How does Node.js achieve non-blocking I/O, and why is this significant for application performance?](#how-does-node.js-achieve-non-blocking-io-and-why-is-this-significant-for-application-performance) |
+| 135 | [Describe the purpose of `process.nextTick()` and `setImmediate()`. When would you use one over the other, and how do they interact with the event loop phases?](#describe-the-purpose-of-process.nexttick()-and-setimmediate().-when-would-you-use-one-over-the-other-and-how-do-they-interact-with-the-event-loop-phases) |
+| 136 | [You are building a RESTful API with Node.js and Express. How would you structure your project directories and files for maintainability and scalability, considering features like routing, controllers, models, and middleware?](#you-are-building-a-restful-api-with-node.js-and-express.-how-would-you-structure-your-project-directories-and-files-for-maintainability-and-scalability-considering-features-like-routing-controllers-models-and-middleware) |
+| 137 | [Discuss common approaches to error handling in asynchronous Node.js code, including the use of callbacks, Promises, and `async/await`. Highlight best practices.](#discuss-common-approaches-to-error-handling-in-asynchronous-node.js-code-including-the-use-of-callbacks-promises-and-asyncawait.-highlight-best-practices.) |
+| 138 | [How can you ensure the scalability of a Node.js application, particularly when dealing with CPU-bound tasks? Mention specific techniques or modules you would use.](#how-can-you-ensure-the-scalability-of-a-node.js-application-particularly-when-dealing-with-cpu-bound-tasks-mention-specific-techniques-or-modules-you-would-use.) |
+| 139 | [Explain the concept of middleware in an Express.js application. Provide a simple example of how you might create and use a custom authentication middleware.](#explain-the-concept-of-middleware-in-an-express.js-application.-provide-a-simple-example-of-how-you-might-create-and-use-a-custom-authentication-middleware.) |
+| 140 | [Consider a scenario where you need to perform heavy computational tasks (e.g., image processing, complex calculations) within a Node.js application without blocking the event loop. Describe specific strategies or tools you would use to offload or manage these tasks.](#consider-a-scenario-where-you-need-to-perform-heavy-computational-tasks-(e.g.-image-processing-complex-calculations)-within-a-node.js-application-without-blocking-the-event-loop.-describe-specific-strategies-or-tools-you-would-use-to-offload-or-manage-these-tasks.) |
+| 141 | [Describe the implications of shared state in a multi-process Node.js application (e.g., using the `cluster` module). How would you manage or avoid issues related to shared state, such as session data or in-memory caches, in such an environment?](#describe-the-implications-of-shared-state-in-a-multi-process-node.js-application-(e.g.-using-the-cluster-module).-how-would-you-manage-or-avoid-issues-related-to-shared-state-such-as-session-data-or-in-memory-caches-in-such-an-environment) |
+| 142 | [You suspect a memory leak in a Node.js application running in production. Outline a systematic approach to diagnose and debug this issue, including tools and techniques you would use.](#you-suspect-a-memory-leak-in-a-node.js-application-running-in-production.-outline-a-systematic-approach-to-diagnose-and-debug-this-issue-including-tools-and-techniques-you-would-use.) |
 
 1. ### What is Node.js?
 
@@ -8331,6 +8340,713 @@ Building a secure Node.js application is like fortifying a castle; you need mult
 ---
 **Summary:**
 Prioritizing input validation, secure dependency management, proper secret handling, and careful error reporting are fundamental steps to build a robust and production-ready Node.js application that can withstand common web vulnerabilities. Security is an ongoing process, not a one-time setup.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+
+134. ### How does Node.js achieve non-blocking I/O, and why is this significant for application performance?
+
+Here's how Node.js achieves non-blocking I/O and why it's crucial for performance:
+
+### How Node.js Achieves Non-Blocking I/O
+
+Node.js is renowned for its non-blocking, asynchronous nature, which is critical for its high performance, especially in I/O-heavy applications like web servers.
+
+**What is I/O?**
+**I/O (Input/Output)** refers to operations that involve communicating with external systems. This includes reading from a database, writing to a file, or making network requests (e.g., fetching data from another API). These operations are typically *much slower* than pure computational tasks handled by the CPU.
+
+**Blocking vs. Non-Blocking I/O**
+
+*   **Blocking I/O:** Imagine a chef who puts a cake in the oven and then *stands completely still*, waiting motionless until the cake is perfectly baked before starting any other tasks or taking new orders. In programming, this means your program pauses and idles, waiting for a slow I/O operation to complete.
+*   **Non-Blocking I/O:** Our smart chef puts the cake in the oven, sets a timer, and immediately starts prepping ingredients for the next order or taking new orders. When the timer rings, an alarm notifies them the cake is ready. The chef is *always busy*, maximizing throughput. In Node.js, your program initiates an I/O operation and immediately moves on to the next task, handling the result only when the operation finishes and notifies it.
+
+**How Node.js Does It: The Event Loop**
+
+Node.js achieves this non-blocking behavior using a **single-threaded Event Loop** and an underlying C++ library called **libuv**.
+
+1.  **Single JavaScript Thread:** Your JavaScript code executes on a single main thread. This means it can only process one task from your code at any given moment.
+2.  **Offloading I/O (libuv):** When your JavaScript code encounters an I/O operation (like reading a file or a network request), Node.js doesn't block the main thread. Instead, it offloads this task to `libuv`, which handles it in the background (often using operating system asynchronous I/O primitives or a separate thread pool managed internally by `libuv`).
+3.  **The Event Loop:** While `libuv` handles the I/O in the background, the main JavaScript thread continues executing other code. When the I/O operation completes (e.g., the file is read), `libuv` places a "completion event" into a queue. The Event Loop constantly monitors this queue. When the main JavaScript thread finishes its current synchronous tasks and becomes free, the Event Loop picks up the completion event and executes the associated callback function (your code that handles the result).
+
+**Code Example:**
+```javascript
+const fs = require('fs');
+
+console.log("Start Application"); // 1. Runs immediately
+
+// 2. Node.js sends this file read to libuv and moves on.
+fs.readFile('my_file.txt', 'utf8', (err, data) => {
+  if (err) throw err;
+  console.log("File content loaded:", data); // 4. This callback runs *later*, when the file is ready.
+});
+
+console.log("End Application Setup"); // 3. Runs immediately after readFile is offloaded.
+```
+**Output will typically be:**
+```
+Start Application
+End Application Setup
+File content loaded: (contents of my_file.txt)
+```
+This demonstrates that `readFile` didn't block the execution of `console.log("End Application Setup")`.
+
+### Why is this Significant for Application Performance?
+
+1.  **High Concurrency:** Because the main JavaScript thread isn't waiting around for slow I/O operations, Node.js can efficiently handle a very large number of simultaneous connections and requests. It stays busy, processing one request while others are waiting for their I/O to complete in the background.
+2.  **Scalability:** Non-blocking I/O allows a single Node.js instance to serve more users and requests, making it highly scalable for I/O-bound applications (like most web servers and APIs that frequently interact with databases or external services).
+3.  **Responsiveness:** The application remains responsive to new requests, as slow operations don't freeze the entire system.
+
+**Summary:**
+Node.js achieves non-blocking I/O by having a single JavaScript thread offload slow I/O tasks to an underlying C++ library (`libuv`) and then using an Event Loop to process the results asynchronously. This prevents the main thread from idling, enabling Node.js to achieve high concurrency, scalability, and responsiveness, making it exceptionally performant for I/O-heavy applications.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+135. ### Describe the purpose of `process.nextTick()` and `setImmediate()`. When would you use one over the other, and how do they interact with the event loop phases?
+
+As an experienced technical interviewer, I often ask about Node.js's asynchronous primitives to gauge understanding of the event loop. Let's break down `process.nextTick()` and `setImmediate()`.
+
+---
+
+### Understanding Node.js Scheduling: `process.nextTick()` vs. `setImmediate()`
+
+Both `process.nextTick()` and `setImmediate()` are functions used to schedule code to be executed asynchronously. They allow your program to continue its current operations without blocking, deferring the scheduled code until later. The key difference lies in *when* "later" is, relative to Node.js's Event Loop phases.
+
+---
+
+#### 1. `process.nextTick()`
+
+*   **Purpose:** `process.nextTick()` schedules a callback function to be executed **as soon as possible** but *after* the current operation completes and *before* the Event Loop moves on to its next phase (e.g., checking timers, pending I/O, etc.).
+*   **Analogy:** Imagine you're about to leave a room (the current operation). Before you step out, you remember something critical you *must* do *right now*, in that same room, before moving to the next one.
+*   **When to Use:**
+    *   **Error Handling:** To make sure an error is thrown after all current synchronous code has run, but before any asynchronous I/O starts.
+    *   **Normalizing Asynchronous Behavior:** Ensuring a callback is *always* asynchronous, even if the underlying operation could sometimes be synchronous. This prevents unexpected behavior.
+*   **Event Loop Interaction:** Callbacks registered with `process.nextTick()` are put into a `nextTick` queue. This queue is processed **immediately after the current operation finishes** and **before the Event Loop advances to the next phase.**
+
+    ```javascript
+    console.log('1. Start');
+    process.nextTick(() => {
+      console.log('3. nextTick callback executed');
+    });
+    console.log('2. End');
+    // Output:
+    // 1. Start
+    // 2. End
+    // 3. nextTick callback executed
+    ```
+
+---
+
+#### 2. `setImmediate()`
+
+*   **Purpose:** `setImmediate()` schedules a callback function to be executed **in the next iteration of the Event Loop**, specifically within the "check" phase.
+*   **Analogy:** You finish your tasks in the current room, move to the next "station" in your house (the "check" phase), and *then* perform the task you scheduled for "immediately after my current set of chores."
+*   **When to Use:**
+    *   **Deferring Tasks:** When you want to defer an operation to allow any pending I/O operations or timers that have already completed to run first.
+    *   **Breaking Up Long Operations:** To prevent a long-running synchronous task from blocking the Event Loop, you can break it into smaller pieces and schedule subsequent pieces with `setImmediate()`.
+*   **Event Loop Interaction:** Callbacks registered with `setImmediate()` are placed in the `check` queue. This queue is processed **after the `poll` (I/O) phase** and **before the `close` callbacks phase**.
+
+    ```javascript
+    console.log('A. First');
+    setImmediate(() => {
+      console.log('C. setImmediate callback executed');
+    });
+    console.log('B. Second');
+    // Output (generally):
+    // A. First
+    // B. Second
+    // C. setImmediate callback executed
+    ```
+
+---
+
+#### When to Use One Over the Other?
+
+The choice depends on the desired urgency and interaction with the Event Loop:
+
+*   **`process.nextTick()`** is for **higher urgency / immediate execution** within the *current* turn of the Event Loop. Use it when you need to execute code *right after* the current function completes, but *before* the Event Loop has a chance to do *anything else* (like processing timers, I/O, or `setImmediate` callbacks).
+*   **`setImmediate()`** is for **less urgent / next-turn execution**. Use it when you want to defer code until *after* all pending I/O and timers have been processed in the current loop, effectively allowing the Event Loop to complete its current "cycle" before running your callback.
+
+**Key Difference:** `process.nextTick()` runs *before* timers and I/O callbacks, while `setImmediate()` runs *after* timers and I/O callbacks in a specific phase.
+
+---
+
+#### Brief Summary
+
+*   `process.nextTick()`: "Run this code as soon as the current function finishes, *before* anything else." (Most immediate)
+*   `setImmediate()`: "Run this code once the Event Loop finishes its current tasks and gets to its 'check' phase." (Less immediate, allows other things to happen first)
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+136. ### You are building a RESTful API with Node.js and Express. How would you structure your project directories and files for maintainability and scalability, considering features like routing, controllers, models, and middleware?
+
+When building a RESTful API with Node.js and Express, a well-thought-out project structure is crucial for **maintainability** (easy to understand and fix) and **scalability** (easy to add new features or handle more users). The core idea is to separate different concerns, much like how a restaurant separates its menu (routes), kitchen (controllers), and pantry (models).
+
+Here's a common and effective directory structure:
+
+```
+my-api-project/
+├── node_modules/         # Third-party libraries (installed via npm)
+├── src/                  # All your application's source code
+│   ├── routes/           # Defines API endpoints (e.g., /users, /products)
+│   │   └── users.js
+│   │   └── products.js
+│   ├── controllers/      # Handles request logic; interacts with models
+│   │   └── userController.js
+│   │   └── productController.js
+│   ├── models/           # Defines data structures and interacts with database
+│   │   └── User.js
+│   │   └── Product.js
+│   ├── middleware/       # Functions that run before/after route handlers (e.g., authentication)
+│   │   └── authMiddleware.js
+│   ├── utils/            # Helper functions (e.g., error handlers, validators)
+│   │   └── errorHandler.js
+│   └── app.js            # Express application setup
+├── .env                  # Environment variables (e.g., database URL, API keys)
+├── package.json          # Project metadata, scripts, and dependencies
+└── server.js             # Main entry point to start the server
+```
+
+Let's break down each key component:
+
+1.  **`server.js` (Entry Point)**:
+    *   This is where your server starts. It typically imports `app.js` and listens for incoming requests on a specific port.
+    *   *Analogy*: The "Open" sign for your restaurant.
+
+2.  **`src/app.js` (Express App Setup)**:
+    *   Configures your Express application. It sets up middleware (like body parsers) and connects your main routes.
+    *   *Analogy*: The main structure of your restaurant, including basic utilities like water and electricity.
+
+3.  **`src/routes/` (Routing)**:
+    *   Contains files that define your API's endpoints (URLs) and direct them to the appropriate "controller" function. Each file usually handles routes for a specific resource (e.g., `users.js` for all `/users` related routes).
+    *   *Example (`src/routes/users.js`)*:
+        ```javascript
+        const express = require('express');
+        const router = express.Router();
+        const userController = require('../controllers/userController');
+
+        router.get('/', userController.getAllUsers); // GET /users
+        router.post('/', userController.createUser); // POST /users
+        module.exports = router;
+        ```
+    *   *Analogy*: The "Menu" of your restaurant, listing all available dishes (endpoints).
+
+4.  **`src/controllers/` (Controllers)**:
+    *   Contains the business logic for handling requests. A controller function receives a request, interacts with models (to fetch/save data), and sends back a response. They don't directly handle database operations.
+    *   *Example (`src/controllers/userController.js`)*:
+        ```javascript
+        exports.getAllUsers = (req, res) => {
+          // Logic to fetch users from the User model
+          res.status(200).json({ message: 'List of users' });
+        };
+        exports.createUser = (req, res) => {
+          // Logic to create a user using the User model and req.body
+          res.status(201).json({ message: 'User created' });
+        };
+        ```
+    *   *Analogy*: The "Chef" who prepares the dishes based on your order from the menu.
+
+5.  **`src/models/` (Models)**:
+    *   Defines the structure of your data and handles all interactions with your database (e.g., Mongoose schemas for MongoDB, Sequelize models for SQL databases). They encapsulate database logic.
+    *   *Analogy*: The "Pantry" or "Recipe Book" containing all the raw ingredients and instructions on how to prepare them.
+
+6.  **`src/middleware/` (Middleware)**:
+    *   Functions that execute in the middle of a request-response cycle. They can perform tasks like authentication, logging, error handling, or data parsing *before* the request reaches the controller.
+    *   *Analogy*: The "Host/Hostess" checking IDs at the door (authentication) or the "Waiter" taking your order (logging/parsing) before the order reaches the chef.
+
+7.  **`src/utils/` (Utilities)**:
+    *   Houses reusable helper functions that don't fit neatly into other categories, such as custom error handlers, data validators, or common utility functions.
+
+**Summary:**
+This structure, often referred to as a "separation of concerns," makes your API project highly organized. Each component has a clear responsibility, making it easier to navigate, debug, add new features, and collaborate with other developers. It's the foundation for a robust and scalable application.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+137. ### Discuss common approaches to error handling in asynchronous Node.js code, including the use of callbacks, Promises, and `async/await`. Highlight best practices.
+
+Asynchronous operations in Node.js, like fetching data or reading files, don't block the main program flow. This non-blocking nature means errors don't stop the whole application, but they must be handled correctly to prevent silent failures or unexpected behavior.
+
+Let's explore common approaches:
+
+### 1. Callbacks
+Traditionally, Node.js asynchronous functions use callbacks. The convention is that the **first argument** to the callback function is reserved for an `Error` object. If an error occurs, it's passed as the first argument; otherwise, it's `null`, and the data is passed as the second argument.
+
+```javascript
+// Example: Reading a file
+const fs = require('fs');
+
+fs.readFile('non_existent_file.txt', 'utf8', (err, data) => {
+  if (err) {
+    console.error("Callback Error:", err.message); // Handle the error
+    return;
+  }
+  console.log("Callback Success:", data); // Process the data
+});
+```
+**Pros:** Simple for single, isolated asynchronous operations.
+**Cons:** Can lead to "callback hell" (deeply nested callbacks) and complex error propagation in intricate asynchronous flows.
+
+### 2. Promises
+Promises represent the eventual completion (or failure) of an asynchronous operation and its resulting value. They provide a cleaner way to handle sequences of asynchronous events.
+
+A Promise can be in one of three states:
+*   **Pending:** Initial state, neither fulfilled nor rejected.
+*   **Fulfilled (Resolved):** The operation completed successfully.
+*   **Rejected:** The operation failed.
+
+You use `.then()` for success and `.catch()` for errors.
+
+```javascript
+function fetchData() {
+  return new Promise((resolve, reject) => {
+    // Simulate an async operation that fails
+    setTimeout(() => {
+      reject(new Error("Failed to fetch data!"));
+      // resolve("Data fetched successfully!"); // For success
+    }, 100);
+  });
+}
+
+fetchData()
+  .then(data => console.log("Promise Success:", data))
+  .catch(err => console.error("Promise Error:", err.message)); // Catches any errors in the chain
+```
+**Pros:** Enables cleaner chaining of asynchronous operations. A single `.catch()` can handle errors from any part of the promise chain.
+**Cons:** Still uses `.then()` callbacks, which can become long.
+
+### 3. `async/await`
+`async/await` is modern JavaScript syntax built on Promises that makes asynchronous code look and behave more like synchronous code, making it highly readable. Errors are handled using the familiar `try...catch` block.
+
+```javascript
+async function fetchDataAsync() {
+  return new Promise((resolve, reject) => {
+    // Simulate an async operation that fails
+    setTimeout(() => {
+      reject(new Error("Failed to fetch data (Async/Await)!"));
+      // resolve("Data fetched (Async/Await)!"); // For success
+    }, 100);
+  });
+}
+
+async function runExample() {
+  try {
+    const data = await fetchDataAsync(); // 'await' pauses execution until Promise settles
+    console.log("Async/Await Success:", data);
+  } catch (err) {
+    console.error("Async/Await Error:", err.message); // Catches the error from await
+  }
+}
+
+runExample();
+```
+**Pros:** The most readable and intuitive approach, leveraging standard `try...catch` blocks for error handling. It vastly improves code clarity for complex asynchronous flows.
+**Cons:** Requires the calling function to be marked `async`.
+
+### Best Practices
+*   **Always Handle Errors:** Never ignore potential errors. An unhandled rejection in a Promise can crash your Node.js application (unless a global handler like `process.on('unhandledRejection')` is in place).
+*   **Prefer `async/await` with `try...catch`:** For new code, this is the most recommended and readable approach.
+*   **Log Errors:** Use a logging library (e.g., Winston, Pino) to log errors with sufficient detail for debugging and monitoring.
+*   **Provide User Feedback:** If an error affects the user, inform them appropriately.
+*   **Fail Fast:** If an error is unrecoverable, let the program terminate quickly rather than proceeding with corrupted state.
+
+### Summary
+While callbacks laid the foundation, Promises (and especially `async/await`) offer vastly improved readability and robustness for error handling in asynchronous Node.js. Modern Node.js development strongly favors `async/await` with `try...catch` blocks for managing asynchronous errors effectively.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+138. ### How can you ensure the scalability of a Node.js application, particularly when dealing with CPU-bound tasks? Mention specific techniques or modules you would use.
+
+To ensure the scalability of a Node.js application, especially when dealing with CPU-bound tasks, we must address Node.js's fundamental single-threaded nature.
+
+### Node.js and CPU-Bound Tasks
+
+Node.js excels at I/O-bound tasks (like database queries) because of its non-blocking, event-driven architecture. However, it runs on a single thread for its main execution. This means a single complex calculation (a CPU-bound task, like heavy data processing or complex image manipulation) can block the entire application, making it unresponsive for other users.
+
+To tackle this, we primarily use two techniques:
+
+### 1. Clustering / Process Management
+
+**Concept:** Instead of running just one Node.js instance, we run multiple instances of the same application. Each instance can then handle requests independently. Think of it like a restaurant hiring multiple chefs (Node.js processes) to cook dishes concurrently instead of just one chef trying to do everything.
+
+**How it helps with CPU-bound tasks:** If one chef (process) is busy with a difficult dish (CPU-bound task), other chefs (processes) are still free to serve other customers. A load balancer (often built-in with `cluster`) distributes incoming requests among these available processes.
+
+**Module:** Node.js's built-in `cluster` module.
+
+**Example:**
+
+```javascript
+// app.js
+const cluster = require('node:cluster');
+const http = require('node:http');
+const numCPUs = require('node:os').cpus().length;
+
+if (cluster.isPrimary) {
+  console.log(`Primary ${process.pid} is running`);
+  // Fork workers for each CPU core
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died`);
+    // Optional: fork a new worker to replace the dead one
+  });
+} else {
+  // Workers can share any TCP connection
+  // In this case it is an HTTP server
+  http.createServer((req, res) => {
+    if (req.url === '/cpu-intensive') {
+      // Simulate a CPU-bound task
+      let sum = 0;
+      for (let i = 0; i < 2_000_000_000; i++) {
+        sum += i;
+      }
+      res.end(`CPU task completed by worker ${process.pid}. Sum: ${sum}`);
+    } else {
+      res.end(`Hello from worker ${process.pid}!`);
+    }
+  }).listen(8000);
+  console.log(`Worker ${process.pid} started`);
+}
+```
+This code creates multiple Node.js processes, one for each CPU core, allowing them to handle concurrent requests.
+
+### 2. Worker Threads
+
+**Concept:** While Node.js's main loop is single-threaded, the `worker_threads` module allows you to create separate threads *within* a single Node.js process. These threads can run CPU-intensive JavaScript code without blocking the main event loop. Imagine the main chef (main thread) asking an assistant (worker thread) to chop a large pile of vegetables in a separate prep area, so the main chef can keep cooking other dishes.
+
+**How it helps with CPU-bound tasks:** You offload heavy computations to a worker thread. The main thread then remains free to accept new incoming requests, ensuring the application remains responsive.
+
+**Module:** Node.js's built-in `worker_threads` module.
+
+**Example:**
+
+```javascript
+// main.js
+const { Worker } = require('node:worker_threads');
+const http = require('node:http');
+
+http.createServer((req, res) => {
+  if (req.url === '/cpu-intensive') {
+    const worker = new Worker('./worker.js'); // Create a new worker thread
+    worker.on('message', (result) => {
+      res.end(`CPU task completed by worker thread. Result: ${result}`);
+    });
+    worker.on('error', (err) => {
+      console.error(err);
+      res.statusCode = 500;
+      res.end('Error processing task');
+    });
+  } else {
+    res.end('Hello from main thread!');
+  }
+}).listen(8000);
+console.log('Main server running on port 8000');
+
+// worker.js
+const { parentPort } = require('node:worker_threads');
+
+// Simulate a CPU-bound task
+let sum = 0;
+for (let i = 0; i < 2_000_000_000; i++) {
+  sum += i;
+}
+parentPort.postMessage(sum); // Send result back to main thread
+```
+Here, `/cpu-intensive` requests are handled by a separate worker thread, keeping the main server responsive.
+
+### Summary
+For CPU-bound tasks in Node.js, the key is to avoid blocking the single-threaded event loop. **Clustering** leverages multiple CPU cores by running multiple application instances, distributing the load. **Worker Threads** offload specific heavy computations to background threads *within* an instance, keeping the main thread free. Often, a combination of both is used for robust scalability.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+139. ### Explain the concept of middleware in an Express.js application. Provide a simple example of how you might create and use a custom authentication middleware.
+
+Middleware in Express.js is like a series of checkpoints or processing stations that every incoming request passes through before it reaches its final destination (the route handler). Each checkpoint can inspect, modify, or even stop the request.
+
+### What is Middleware?
+
+In an Express.js application, middleware functions are simply functions that have access to the **request object (`req`)**, the **response object (`res`)**, and the `next` function in the application's request-response cycle.
+
+*   **`req` (Request Object):** Contains all information about the incoming request (e.g., headers, body, URL).
+*   **`res` (Response Object):** Used to send a response back to the client.
+*   **`next` (Next Function):** A function that, when called, passes control to the next middleware function in the stack. If `next()` is not called, the request cycle stops.
+
+Think of it like an assembly line: a product (your request) goes through various stations (middleware functions). Each station performs a task (e.g., logging, authentication, data parsing) and then passes the product to the next station until it reaches the end of the line (your route handler).
+
+### Custom Authentication Middleware Example
+
+Let's create a simple authentication middleware that checks if a user is authorized to access a specific route.
+
+1.  **Create the Middleware Function:**
+    This function will check for a specific header or token. For simplicity, we'll check for a hardcoded `Authorization` header.
+
+    ```javascript
+    // authMiddleware.js
+    function isAuthenticated(req, res, next) {
+      // In a real app, you'd validate a JWT, session, or API key
+      const authHeader = req.headers.authorization;
+
+      if (authHeader && authHeader === 'Bearer secret-token-123') {
+        // If authentication passes, proceed to the next middleware or route handler
+        next();
+      } else {
+        // If authentication fails, send an unauthorized response
+        res.status(401).send('Unauthorized: Access Denied');
+      }
+    }
+
+    module.exports = isAuthenticated;
+    ```
+
+2.  **Use the Middleware in Your Express Application:**
+    You can apply middleware globally using `app.use()` or for specific routes. For authentication, it's often applied to specific routes or groups of routes.
+
+    ```javascript
+    // app.js
+    const express = require('express');
+    const app = express();
+    const port = 3000;
+    const isAuthenticated = require('./authMiddleware'); // Import our middleware
+
+    // This route is NOT protected
+    app.get('/', (req, res) => {
+      res.send('Welcome to the public homepage!');
+    });
+
+    // This route IS protected by our isAuthenticated middleware
+    app.get('/protected', isAuthenticated, (req, res) => {
+      res.send('Welcome to the protected dashboard! You are authenticated.');
+    });
+
+    app.listen(port, () => {
+      console.log(`Server listening at http://localhost:${port}`);
+    });
+    ```
+
+**How to test it:**
+
+*   Go to `http://localhost:3000/` – It should work.
+*   Go to `http://localhost:3000/protected` – You should get an "Unauthorized: Access Denied" message.
+*   Use a tool like Postman or `curl` to send a request to `http://localhost:3000/protected` with the header `Authorization: Bearer secret-token-123` – It should now work and show the protected message.
+
+### Summary
+
+Middleware functions are a powerful way to organize your application logic, perform tasks like logging, authentication, and data parsing, and keep your route handlers clean and focused on their primary job. By leveraging the `req`, `res`, and `next()` objects, middleware creates a flexible and efficient request-response pipeline.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+140. ### Consider a scenario where you need to perform heavy computational tasks (e.g., image processing, complex calculations) within a Node.js application without blocking the event loop. Describe specific strategies or tools you would use to offload or manage these tasks.
+
+When performing heavy computational tasks in Node.js, the primary concern is to avoid blocking the **event loop**. Node.js is single-threaded, meaning it has one main "chef" (the event loop) handling all incoming requests. If this chef gets stuck on a very long task, no other requests can be processed, making your application slow or unresponsive.
+
+To offload these tasks, we typically use **Worker Threads** or, less commonly for pure computation, **Child Processes**.
+
+### 1. Worker Threads (Recommended for CPU-Bound Tasks)
+
+Worker Threads are a built-in Node.js module designed for CPU-intensive operations. They allow you to spin up separate threads within the same Node.js process to perform heavy calculations without blocking the main event loop. Think of it like hiring a specialized sous-chef for a complex recipe, allowing the main chef to continue serving other guests.
+
+**How it works:**
+*   You create a new `Worker` instance, pointing it to a separate JavaScript file that contains your heavy computation logic.
+*   Data is passed between the main thread and the worker using messages (`postMessage`, `on`).
+
+**Example:**
+
+**`main.js` (main application file):**
+```javascript
+const { Worker } = require('worker_threads');
+
+console.log('Main thread: Starting heavy calculation...');
+
+const worker = new Worker('./worker.js', {
+  workerData: { num: 40 } // Data to send to the worker
+});
+
+worker.on('message', (result) => {
+  console.log(`Main thread: Calculation finished. Result: ${result}`);
+});
+
+worker.on('error', (err) => {
+  console.error('Worker thread error:', err);
+});
+
+worker.on('exit', (code) => {
+  if (code !== 0)
+    console.error(`Worker stopped with exit code ${code}`);
+});
+
+console.log('Main thread: Application continues to run (event loop is free)');
+```
+
+**`worker.js` (file containing heavy computation):**
+```javascript
+const { parentPort, workerData } = require('worker_threads');
+
+function fibonacci(n) { // Example: a computationally heavy function
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+const numToCalculate = workerData.num;
+const result = fibonacci(numToCalculate);
+
+parentPort.postMessage(result); // Send result back to main thread
+```
+
+**Benefits:**
+*   Keeps the main event loop free and responsive.
+*   Workers run in parallel, utilizing multi-core CPUs.
+*   More efficient than child processes for in-process calculations as they share memory.
+
+### 2. Child Processes (For External Programs or Very Isolated Tasks)
+
+While Worker Threads are usually preferred for *computational* tasks, **Child Processes** are another option, particularly useful when you need to:
+*   Execute an external program (e.g., `ffmpeg` for video processing, `ImageMagick` for image manipulation).
+*   Run another Node.js script in a completely separate process.
+
+This is like sending a complex dish to a *different restaurant* to be prepared, completely isolating it from your main kitchen. Node.js provides modules like `child_process` (`spawn`, `execFile`) to interact with these processes.
+
+### Summary
+
+To keep your Node.js application responsive during heavy computational tasks:
+*   **Worker Threads** are your go-to for CPU-bound computations that can be written in JavaScript.
+*   **Child Processes** are useful for executing external programs or entirely separate Node.js instances.
+
+The goal is always to offload long-running operations from the main thread, ensuring your Node.js application remains fast and available to handle new requests.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+141. ### Describe the implications of shared state in a multi-process Node.js application (e.g., using the `cluster` module). How would you manage or avoid issues related to shared state, such as session data or in-memory caches, in such an environment?
+
+As an experienced technical interviewer, I often see candidates struggle with shared state in distributed systems. Let's break down this crucial concept for multi-process Node.js applications.
+
+---
+
+### Understanding Shared State in Multi-Process Node.js
+
+Node.js, by default, runs in a single process. However, to leverage multi-core CPUs, we often use modules like `cluster`.
+
+When you use the `cluster` module, it forks (creates copies of) your Node.js application. Each copy runs as an **independent operating system process**. This is like having several separate kitchens, each with its own ingredients and equipment.
+
+1.  **What is "Shared State"?**
+    "State" refers to data that your application holds (e.g., a logged-in user's session, cached product information, or a simple counter). "Shared state" implies this data needs to be accessible and consistent across multiple parts of your application.
+
+2.  **Implications in Multi-Process Node.js (`cluster`):**
+    The key implication is that **each worker process in a `cluster` has its own isolated memory space.**
+
+    *   **No Automatic Sharing:** If `Worker A` stores a user's session data in its in-memory variable (e.g., `let activeSessions = {}`), `Worker B` has no knowledge of it. It maintains its *own* separate `activeSessions` variable.
+    *   **Inconsistency:** If a user logs in and their request hits `Worker A`, their session is stored there. If their *next* request hits `Worker B` (which is common with a load balancer), `Worker B` won't find the session, and the user will appear logged out. This leads to inconsistent data and unpredictable behavior.
+    *   **Example (In-memory counter):**
+        ```javascript
+        const cluster = require('cluster');
+        const http = require('http');
+
+        if (cluster.isMaster) {
+            console.log(`Master ${process.pid} is running`);
+            for (let i = 0; i < 2; i++) cluster.fork();
+        } else {
+            let requestCount = 0; // This is LOCAL to each worker process!
+            http.createServer((req, res) => {
+                requestCount++;
+                res.end(`Worker ${process.pid} has served ${requestCount} requests.`);
+            }).listen(8000);
+        }
+        ```
+        If you hit port 8000 repeatedly, you'll see `requestCount` increment from 1 for *each* worker process, not cumulatively across all of them.
+
+### Managing or Avoiding Issues
+
+The fundamental principle is to **externalize** any state that needs to be shared or persistent across requests or users.
+
+1.  **External Databases for Session Data and Persistent Storage:**
+    *   **Session Data:** Instead of storing sessions in memory, use a dedicated session store like **Redis** (a fast, in-memory data structure store). When a user logs in, store their session ID and data in Redis. Any worker can then retrieve this data by session ID from Redis.
+    *   **General Data:** For application data (user profiles, products, orders), always use a robust database like **PostgreSQL**, **MongoDB**, or other relational/NoSQL databases.
+
+2.  **Dedicated Caching Services for In-memory Caches:**
+    *   For performance-critical data that doesn't need to be immediately persistent, use a distributed caching system like **Redis** or **Memcached**. All workers can then read from or write to this central cache.
+
+3.  **Message Queues (for communication, not direct state):**
+    While not directly sharing state, message queues (e.g., RabbitMQ, Kafka) allow different processes to communicate and coordinate actions without needing direct memory access.
+
+4.  **Sticky Sessions (with caveats):**
+    For session data, some load balancers can be configured for "sticky sessions," meaning a user's requests are always routed to the *same* worker process. This *avoids* the shared state problem for sessions, but it has drawbacks:
+    *   If that worker dies, the user's session is lost.
+    *   It can lead to uneven load distribution across workers.
+    *   It's generally less robust than externalizing session data.
+
+### Summary
+
+In a multi-process Node.js environment (`cluster`), remember that each process is an independent entity with its own memory. To manage shared state, always **externalize critical data** (sessions, caches, application data) to a centralized, external service like a database (e.g., PostgreSQL, MongoDB) or a fast key-value store like Redis. This ensures consistency, scalability, and resilience for your application.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+142. ### You suspect a memory leak in a Node.js application running in production. Outline a systematic approach to diagnose and debug this issue, including tools and techniques you would use.
+
+A memory leak in a Node.js application means your program continuously consumes more memory without releasing it back to the system, eventually leading to slowdowns, instability, or crashes (like an "out of memory" error). Here's a systematic approach to diagnose and debug it:
+
+### 1. Confirm & Observe (Initial Signs)
+
+*   **Symptoms:** Your application might become progressively slower, respond with delays, or crash after prolonged uptime.
+*   **Initial Check:** Use operating system tools to see your Node.js process's memory usage.
+    *   **Linux/macOS:** `top` or `htop`
+    *   **Windows:** Task Manager (look at the "Memory" column for your Node.js process).
+    *   **Goal:** Observe if memory usage is steadily increasing over time, rather than just being high but stable. This confirms a leak, not just high memory consumption.
+
+### 2. Monitor Memory Programmatically (Quantify the Leak)
+
+For more precise tracking, use Node.js's built-in `process.memoryUsage()`.
+```javascript
+// Log memory usage every 5 seconds
+setInterval(() => {
+  const { rss, heapTotal, heapUsed, external } = process.memoryUsage();
+  const toMB = (bytes) => (bytes / (1024 * 1024)).toFixed(2);
+
+  console.log(`RSS: ${toMB(rss)} MB, ` +
+              `Heap Total: ${toMB(heapTotal)} MB, ` +
+              `Heap Used: ${toMB(heapUsed)} MB`);
+}, 5000);
+```
+*   **Explanation:**
+    *   `rss` (Resident Set Size): Total memory the process occupies in RAM.
+    *   `heapTotal`: Total size of V8's memory heap.
+    *   `heapUsed`: Memory actually used by your application's objects within V8's heap.
+*   **Interpretation:** A consistently rising `heapUsed` value over hours or days is a strong indicator of a memory leak.
+
+### 3. Generate & Analyze Heap Snapshots (Pinpoint the Leak)
+
+This step helps identify *what specific objects* are accumulating in memory.
+
+*   **Generate Snapshots:**
+    1.  Start your Node.js application with the inspector enabled: `node --inspect index.js`
+    2.  Open Chrome DevTools (`chrome://inspect`) and click "Open dedicated DevTools for Node".
+    3.  Go to the "Memory" tab.
+    4.  Select "Heap snapshot" and click "Take snapshot".
+    5.  Let your application run for a while, performing typical operations that might trigger the leak (e.g., making repeated API calls).
+    6.  Take a second (and maybe a third) snapshot after some time.
+*   **Analyze Snapshots:**
+    1.  In DevTools, select the *second* snapshot.
+    2.  In the "Summary" dropdown, choose "Objects allocated between snapshot 1 and snapshot 2".
+    3.  Sort by "Size Delta". Look for object types that are consistently increasing in count or retain large amounts of memory.
+    *   **Common culprits:** Unclosed event listeners, growing caches (`Map`, `Object`), global variables holding large data, forgotten timers/intervals, or references to old scopes in closures.
+
+### 4. Debug & Fix
+
+Once you've identified the type of leaking objects, trace them back to your code. For instance, if you see many `EventListener` objects, ensure you're calling `removeListener` when events are no longer needed. If a cache is growing, implement a proper eviction policy.
+
+### 5. Verify the Fix
+
+After implementing a potential fix, redeploy your application and repeat the monitoring steps (2 and 3) to confirm that the memory leak has been resolved and `heapUsed` no longer continuously grows.
+
+---
+
+**Summary:** Diagnosing a Node.js memory leak involves a systematic process: observing the symptoms, programmatically monitoring memory over time, taking and comparing heap snapshots using Chrome DevTools to pinpoint the accumulating objects, and then debugging your code to break those unintended references. Patience and iterative testing are crucial.
 
 **[⬆ Back to Top](#table-of-contents)**
 
