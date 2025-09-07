@@ -367,6 +367,16 @@
 | 358 | [Describe common causes of memory leaks in Node.js applications and the tools or techniques you would use to diagnose and fix them.](#describe-common-causes-of-memory-leaks-in-node.js-applications-and-the-tools-or-techniques-you-would-use-to-diagnose-and-fix-them.) |
 | 359 | [When would you choose a database like Redis over a traditional relational database (e.g., PostgreSQL) in a Node.js application, and how would you integrate it?](#when-would-you-choose-a-database-like-redis-over-a-traditional-relational-database-(e.g.-postgresql)-in-a-node.js-application-and-how-would-you-integrate-it) |
 | 360 | [Explain the implications of writing "blocking" code in Node.js. Provide an example of a blocking operation and how you would refactor it to be non-blocking.](#explain-the-implications-of-writing-"blocking"-code-in-node.js.-provide-an-example-of-a-blocking-operation-and-how-you-would-refactor-it-to-be-non-blocking.) |
+| 361 | [Explain the Node.js Event Loop. How does it enable non-blocking I/O, and what are the phases involved in a single tick?](#explain-the-node.js-event-loop.-how-does-it-enable-non-blocking-io-and-what-are-the-phases-involved-in-a-single-tick) |
+| 362 | [Describe the difference between `module.exports`/`require` and ES Modules (`import`/`export`) in Node.js. When would you choose one over the other?](#describe-the-difference-between-module.exportsrequire-and-es-modules-(importexport)-in-node.js.-when-would-you-choose-one-over-the-other) |
+| 363 | [What are Node.js Streams, and when would you use them over traditional buffer-based approaches for handling data? Name and briefly explain the four types of streams.](#what-are-node.js-streams-and-when-would-you-use-them-over-traditional-buffer-based-approaches-for-handling-data-name-and-briefly-explain-the-four-types-of-streams.) |
+| 364 | [Discuss common strategies for error handling in Node.js applications, especially for asynchronous operations. How do `try...catch` blocks behave differently with Promises and callbacks?](#discuss-common-strategies-for-error-handling-in-node.js-applications-especially-for-asynchronous-operations.-how-do-try...catch-blocks-behave-differently-with-promises-and-callbacks) |
+| 365 | [Explain the purpose and function of the Node.js `child_process` module. Differentiate between `spawn`, `exec`, and `fork`, providing use cases for each.](#explain-the-purpose-and-function-of-the-node.js-child_process-module.-differentiate-between-spawn-exec-and-fork-providing-use-cases-for-each.) |
+| 366 | [How does Node.js clustering work? What problems does it aim to solve, and what are its limitations or considerations for highly scalable applications?](#how-does-node.js-clustering-work-what-problems-does-it-aim-to-solve-and-what-are-its-limitations-or-considerations-for-highly-scalable-applications) |
+| 367 | [Compare and contrast `async/await` with traditional Promises (using `.then().catch()`). Provide a scenario where `async/await` might lead to cleaner or more maintainable code.](#compare-and-contrast-asyncawait-with-traditional-promises-(using-.then().catch()).-provide-a-scenario-where-asyncawait-might-lead-to-cleaner-or-more-maintainable-code.) |
+| 368 | [You're observing high CPU usage in a Node.js application. What steps would you take to diagnose and troubleshoot the performance bottleneck?](#you're-observing-high-cpu-usage-in-a-node.js-application.-what-steps-would-you-take-to-diagnose-and-troubleshoot-the-performance-bottleneck) |
+| 369 | [Describe common causes of memory leaks in Node.js applications. What tools and techniques would you use to identify and mitigate them?](#describe-common-causes-of-memory-leaks-in-node.js-applications.-what-tools-and-techniques-would-you-use-to-identify-and-mitigate-them) |
+| 370 | [When designing a resilient and scalable Node.js microservice architecture, what considerations would you make regarding inter-service communication, state management, and data consistency?](#when-designing-a-resilient-and-scalable-node.js-microservice-architecture-what-considerations-would-you-make-regarding-inter-service-communication-state-management-and-data-consistency) |
 
 1. ### What is Node.js?
 
@@ -25259,6 +25269,740 @@ In the non-blocking version, "2. Other operations..." prints immediately because
 **Summary:**
 
 To ensure your Node.js application is fast, responsive, and scalable, **always favor non-blocking (asynchronous) operations**. Blocking code can turn your efficient single-threaded Node.js server into a bottleneck, severely hindering its ability to serve multiple users concurrently.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+
+361. ### Explain the Node.js Event Loop. How does it enable non-blocking I/O, and what are the phases involved in a single tick?
+
+The Node.js Event Loop is a fundamental mechanism that enables Node.js, despite being single-threaded, to handle numerous operations concurrently without blocking.
+
+### What is the Node.js Event Loop?
+
+Imagine a highly efficient restaurant manager (your single Node.js thread). Instead of waiting by the stove for a dish to cook (a time-consuming task), the manager quickly takes new orders, delegates cooking tasks to the kitchen staff (underlying system or worker threads), and continues interacting with other customers. Only when a dish is ready does the manager pick it up and serve it.
+
+The Event Loop is that manager. It's a continuous loop that checks if there's any work to be done, processes it, and then moves on.
+
+### How it Enables Non-Blocking I/O
+
+"I/O" refers to Input/Output operations, such as reading files, making network requests, or querying a database.
+
+*   **Blocking I/O** would mean your program stops and waits for an operation (like reading a large file) to complete entirely before moving to the next line of code. This would make your application slow and unresponsive.
+*   **Non-blocking I/O** is what Node.js achieves through the Event Loop. When Node.js encounters an I/O operation, it **delegates** that task to the operating system or an internal worker pool. Instead of waiting, the Event Loop immediately moves on to execute other code. When the I/O operation finishes, the system places a **callback function** (a piece of code to run later) into a specific queue. The Event Loop then picks up these callbacks and executes them when the main thread is free. This ensures your application remains responsive.
+
+### Phases in a Single Tick of the Event Loop
+
+The Event Loop constantly cycles through several distinct phases, processing different types of callbacks in each. A "tick" is one complete iteration through these phases.
+
+1.  **`timers`**: Executes callbacks scheduled by `setTimeout()` and `setInterval()` that are due.
+    ```javascript
+    setTimeout(() => console.log('Timer callback finished'), 0);
+    ```
+2.  **`pending callbacks`**: Handles system-level callbacks, such as failed I/O operations or TCP errors.
+3.  **`poll`**: This is a critical phase. It retrieves new I/O events (e.g., a file read completed, data received from a network request) and executes their corresponding callbacks. If there are no pending tasks in other queues, the Event Loop might pause here briefly, waiting for new I/O events.
+4.  **`check`**: Executes callbacks scheduled by `setImmediate()`. These are specifically designed to run just after the `poll` phase.
+    ```javascript
+    setImmediate(() => console.log('Immediate callback executed'));
+    ```
+5.  **`close callbacks`**: Handles callbacks for closed resources, like `socket.on('close', ...)`.
+
+### Summary
+
+The Node.js Event Loop is the engine behind its non-blocking, asynchronous nature. By cycling through specific phases and efficiently managing callback queues, it allows a single-threaded Node.js application to handle many operations concurrently, making it highly performant for I/O-bound tasks.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+362. ### Describe the difference between `module.exports`/`require` and ES Modules (`import`/`export`) in Node.js. When would you choose one over the other?
+
+In Node.js, managing and reusing code is done through **modules**. There are two primary systems for this: CommonJS (`module.exports`/`require`) and ES Modules (`import`/`export`). Think of them as different "language dialects" for sharing code between files.
+
+### 1. CommonJS (`module.exports`/`require`)
+
+This is Node.js's original and default module system.
+
+*   **How it works**:
+    *   `module.exports`: Used to specify what a file *offers* to other files. You can export objects, functions, or variables.
+    *   `require()`: Used to *bring in* code that another file has exported.
+*   **Loading**: CommonJS modules are loaded **synchronously**. When you `require()` a module, Node.js pauses execution until that module is fully loaded and processed.
+*   **Example**:
+    ```javascript
+    // math.js (CommonJS)
+    function add(a, b) {
+      return a + b;
+    }
+    module.exports = { add }; // Exporting 'add' function
+
+    // app.js (CommonJS)
+    const math = require('./math'); // Importing 'add'
+    console.log(math.add(2, 3)); // Output: 5
+    ```
+
+### 2. ES Modules (`import`/`export`)
+
+This is the official, standardized JavaScript module system, used in browsers and now fully supported in Node.js.
+
+*   **How it works**:
+    *   `export`: Used to define what a file *offers*. Can be named exports (`export const x`) or a default export (`export default y`).
+    *   `import`: Used to *bring in* code that has been exported.
+*   **Loading**: ES Modules are loaded **asynchronously** and can be statically analyzed (pre-parsed) before code execution. This can lead to better performance and features like "tree-shaking" (removing unused code).
+*   **Node.js Usage**: For Node.js to treat a `.js` file as an ES Module, you either name it with the `.mjs` extension or set `"type": "module"` in your `package.json`.
+*   **Example**:
+    ```javascript
+    // math.mjs (ES Module)
+    export function add(a, b) { // Exporting 'add' function
+      return a + b;
+    }
+
+    // app.mjs (ES Module)
+    import { add } from './math.mjs'; // Importing 'add'
+    console.log(add(2, 3)); // Output: 5
+    ```
+
+### Key Differences
+
+*   **Syntax**: `require()`/`module.exports` vs. `import`/`export`.
+*   **Loading**: CommonJS is **synchronous**; ES Modules are **asynchronous**.
+*   **Binding**: CommonJS exports a *copy* of the value; ES Modules provide a *live binding* to the original value.
+*   **Node.js Default**: CommonJS is the default for `.js` files; ES Modules require `.mjs` or `type: "module"`.
+
+### When to Choose One Over the Other?
+
+*   **Choose CommonJS (`require`) when**:
+    *   You are working on an **older Node.js project** or integrating with libraries that exclusively use CommonJS.
+    *   You need dynamic `require` statements (e.g., loading modules based on conditions), which is harder with `import`.
+    *   It's the default for most legacy Node.js code.
+
+*   **Choose ES Modules (`import`) when**:
+    *   Starting **new Node.js projects**. It's the modern standard.
+    *   You want **browser compatibility** for your modules (ES Modules are standard in browsers).
+    *   You need features like **tree-shaking** for smaller bundle sizes (with build tools like Webpack).
+    *   You prefer a more **standardized and future-proof** approach.
+
+### Summary
+
+CommonJS (`require`/`module.exports`) is Node.js's original, synchronous module system. ES Modules (`import`/`export`) are the modern, standardized JavaScript approach, offering asynchronous loading and better compatibility across environments. For new projects, ES Modules are generally the recommended choice due to their benefits and alignment with modern web development.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+363. ### What are Node.js Streams, and when would you use them over traditional buffer-based approaches for handling data? Name and briefly explain the four types of streams.
+
+Node.js Streams are powerful objects that allow you to read data from a source or write data to a destination in small, manageable **chunks**, rather than loading the entire dataset into memory all at once. Think of them as **water pipes** where data flows continuously, piece by piece, as opposed to **buckets** that must be filled completely before you can use any water.
+
+### Why Use Streams Over Buffer-Based Approaches?
+
+Traditional buffer-based methods (like `fs.readFileSync` or `fs.readFile`) load the entire file or data into your computer's RAM. While fine for small files, this approach has limitations:
+
+1.  **Memory Efficiency:** For large files (e.g., a 10 GB video file or a massive log file), loading everything into RAM can quickly exhaust available memory, causing your application to crash. Streams process data chunk-by-chunk, using only a small, constant amount of memory.
+2.  **Time Efficiency:** With streams, you can start processing data as soon as the first chunk arrives, rather than waiting for the entire dataset to be loaded. This makes your applications feel faster and more responsive.
+3.  **Backpressure:** Streams automatically handle situations where a data producer is faster than a data consumer. They can pause the flow of data when the consumer is overwhelmed, preventing memory overflow and ensuring stable operation.
+
+**Example:** Reading a large file
+
+```javascript
+const fs = require('fs');
+
+// Buffer-based: Loads entire file into memory (can crash for huge files)
+// const data = fs.readFileSync('large_file.txt'); 
+// console.log(data.toString());
+
+// Stream-based: Reads and processes data in chunks (memory efficient)
+fs.createReadStream('large_file.txt')
+  .on('data', (chunk) => {
+    console.log(`Received ${chunk.length} bytes of data.`);
+    // Process the chunk here
+  })
+  .on('end', () => {
+    console.log('Finished reading the file.');
+  })
+  .on('error', (err) => {
+    console.error('An error occurred:', err);
+  });
+```
+
+### The Four Types of Streams
+
+1.  **Readable Streams:**
+    *   Data *comes from* them. You can read data from a readable stream.
+    *   **Example:** `fs.createReadStream` (reading a file), an HTTP request in a server (`req`).
+
+2.  **Writable Streams:**
+    *   Data *goes to* them. You can write data to a writable stream.
+    *   **Example:** `fs.createWriteStream` (writing to a file), an HTTP response in a server (`res`).
+
+3.  **Duplex Streams:**
+    *   Are both Readable and Writable. You can write data to them, and also read data from them.
+    *   **Example:** A TCP `net.Socket` (you can send and receive data over a network connection).
+
+4.  **Transform Streams:**
+    *   A special type of Duplex stream where the output is computed based on the input. They *transform* or modify data as it passes through.
+    *   **Example:** `zlib.createGzip` (compressing data), `crypto.createCipher` (encrypting data).
+
+### Summary
+
+Node.js Streams offer an efficient, memory-friendly, and performant way to handle data, especially when dealing with large datasets or I/O operations. By processing data in chunks, they prevent memory overflows and enable faster, more robust applications.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+364. ### Discuss common strategies for error handling in Node.js applications, especially for asynchronous operations. How do `try...catch` blocks behave differently with Promises and callbacks?
+
+Error handling is crucial in Node.js to ensure robust and stable applications, especially given its asynchronous nature.
+
+### Common Strategies for Error Handling
+
+1.  **Synchronous Operations (`try...catch`)**
+    For code that executes immediately, `try...catch` blocks are the standard. They act like a safety net, catching errors (exceptions) that occur within the `try` block.
+
+    ```javascript
+    try {
+        // Code that might throw an error immediately
+        let result = JSON.parse('{"name": "Alice"'); // Malformed JSON
+        console.log(result.name);
+    } catch (error) {
+        console.error("Synchronous error:", error.message);
+    }
+    // Output: Synchronous error: Unexpected end of JSON input
+    ```
+
+2.  **Asynchronous Operations**
+    Node.js heavily relies on asynchronous operations (like reading files, making network requests). `try...catch` *cannot* directly catch errors from asynchronous code that finishes *after* the `try...catch` block has completed.
+
+    *   **Error-First Callbacks:**
+        This is a common pattern for older Node.js APIs. The first argument of a callback function is reserved for an error object. If an error occurs, `err` will be populated; otherwise, it will be `null`.
+
+        ```javascript
+        const fs = require('fs');
+        fs.readFile('non-existent-file.txt', (err, data) => {
+            if (err) {
+                console.error("Callback error:", err.message);
+                return;
+            }
+            console.log("File content:", data.toString());
+        });
+        // Output: Callback error: ENOENT: no such file or directory...
+        ```
+
+    *   **Promises (`.catch()`):**
+        Modern Node.js APIs use Promises to handle asynchronous operations more cleanly. Instead of `try...catch`, you use the `.catch()` method on the Promise to handle rejections (errors).
+
+        ```javascript
+        function fetchData() {
+            return new Promise((resolve, reject) => {
+                // Simulate an async operation that fails
+                setTimeout(() => reject(new Error("Data fetching failed!")), 100);
+            });
+        }
+
+        fetchData()
+            .then(data => console.log("Success:", data))
+            .catch(error => console.error("Promise error:", error.message));
+        // Output: Promise error: Data fetching failed!
+        ```
+
+    *   **`async/await` (`try...catch`):**
+        `async/await` is syntactic sugar built on Promises, making asynchronous code look synchronous. Here, `try...catch` *can* be used. When an `await`ed Promise rejects, it *behaves* like a synchronous `throw`, allowing `try...catch` to intercept it.
+
+        ```javascript
+        async function getDataWithAwait() {
+            try {
+                // Simulate an async operation that fails
+                await Promise.reject(new Error("Await operation failed!"));
+            } catch (error) {
+                console.error("Async/Await error:", error.message);
+            }
+        }
+        getDataWithAwait();
+        // Output: Async/Await error: Await operation failed!
+        ```
+
+### How `try...catch` Behaves Differently
+
+*   **With Callbacks:** A `try...catch` block around the *initial call* to an async function (like `fs.readFile()`) will *not* catch errors that occur *inside* the callback later. The original `try...catch` has finished executing long before the callback is invoked.
+
+*   **With Promises:** A `try...catch` block around a raw Promise that rejects *asynchronously* also won't catch the error. The Promise's rejection happens later, outside the `try...catch` scope. You need `.catch()`.
+    However, when using `async/await`, the `await` keyword effectively *pauses* the `async` function's execution until the Promise settles. If it rejects, `await` re-throws that rejection as a synchronous error *within* the `async` function, allowing the `try...catch` block *inside* that `async` function to catch it.
+
+### Summary
+
+*   For **synchronous** code, use `try...catch`.
+*   For **asynchronous** code:
+    *   **Callbacks:** Use the error-first callback pattern (`(err, data) => ...`). `try...catch` won't work.
+    *   **Promises:** Use `.catch()` on the Promise.
+    *   **`async/await`:** Use `try...catch` *within* the `async` function around the `await` calls.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+365. ### Explain the purpose and function of the Node.js `child_process` module. Differentiate between `spawn`, `exec`, and `fork`, providing use cases for each.
+
+The Node.js `child_process` module is a powerful tool that allows your Node.js application to **create and interact with other processes** on your operating system. Think of it as your Node.js program hiring a helper (a "child process") to do some work, either running external commands or even other Node.js scripts, without blocking your main application.
+
+This is crucial because Node.js typically runs in a single process, using an event loop. If your main process gets stuck doing a heavy task, your application becomes unresponsive. Child processes help **offload work**, keeping your main application fast and responsive.
+
+Let's differentiate its three primary methods: `spawn`, `exec`, and `fork`.
+
+---
+
+### `spawn`: The Stream-Oriented Workhorse
+
+*   **Purpose:** To launch a command in a new process, providing **streams** (stdin, stdout, stderr) for continuous interaction.
+*   **How it works:** `spawn` starts the command and immediately returns a `ChildProcess` object. It processes data **as it comes in**, chunk by chunk, making it efficient for large outputs or long-running tasks. It does *not* create a shell by default.
+*   **Analogy:** Imagine a live video feed. You see the events unfold in real-time as they happen.
+*   **Use Cases:**
+    *   Streaming data (e.g., processing a large file or video encoding).
+    *   Long-running background tasks.
+    *   Executing external programs where you need to see output incrementally.
+
+    ```javascript
+    const { spawn } = require('child_process');
+    const ls = spawn('ls', ['-lh', '/usr']); // Runs 'ls -lh /usr'
+
+    ls.stdout.on('data', (data) => {
+      console.log(`stdout: ${data}`); // Output data as it streams
+    });
+
+    ls.on('close', (code) => {
+      console.log(`child process exited with code ${code}`);
+    });
+    ```
+
+---
+
+### `exec`: The Buffered Shell Executor
+
+*   **Purpose:** To run a command in a **shell** and buffer its entire output before returning it.
+*   **How it works:** `exec` creates a shell (like Bash or Zsh), executes the command within it, waits for the command to **finish completely**, collects all its output, and then returns it as a single string.
+*   **Analogy:** Ordering a meal for take-out. You wait until the *entire* meal is prepared, then you get it all at once.
+*   **Use Cases:**
+    *   Simple commands where the output is small and you only care about the final result.
+    *   Commands that benefit from shell features (e.g., piping, wildcards).
+    *   Checking system status (`git status`, `npm version`).
+
+    ```javascript
+    const { exec } = require('child_process');
+
+    exec('find . -maxdepth 1 -type f -print', (error, stdout, stderr) => { // Finds files in current dir
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return;
+      }
+      console.log(`stdout: ${stdout}`); // All output at once
+      if (stderr) console.error(`stderr: ${stderr}`);
+    });
+    ```
+
+---
+
+### `fork`: The Node-Specific Communicator
+
+*   **Purpose:** A special type of `spawn` specifically designed to **create new Node.js processes** that can communicate with the parent process.
+*   **How it works:** `fork` launches a new Node.js instance and runs a specified Node.js script in it. Crucially, it establishes an **Inter-Process Communication (IPC)** channel, allowing parent and child to send messages back and forth using `process.send()` and `process.on('message')`.
+*   **Analogy:** Two people in separate rooms talking to each other using walkie-talkies.
+*   **Use Cases:**
+    *   Offloading CPU-intensive tasks (e.g., complex calculations, image processing) to prevent blocking the main event loop.
+    *   Creating worker processes to handle multiple client requests concurrently.
+    *   Building multi-process Node.js applications.
+
+    *(Parent process - `app.js`)*
+    ```javascript
+    const { fork } = require('child_process');
+    const child = fork('./worker.js'); // Runs 'worker.js' as a new Node process
+
+    child.send({ task: 'heavy_calculation', data: 100 }); // Send message to child
+
+    child.on('message', (message) => {
+      console.log('Message from child:', message); // Receive message from child
+    });
+    ```
+    *(Child process - `worker.js`)*
+    ```javascript
+    process.on('message', (message) => {
+      console.log('Message from parent:', message);
+      const result = message.data * 2; // Perform some work
+      process.send({ result: result }); // Send result back to parent
+    });
+    ```
+
+---
+
+### Summary
+
+*   Use **`spawn`** for long-running processes or when you need to stream data incrementally.
+*   Use **`exec`** for simple, short commands where you want the full output at once and shell features are useful.
+*   Use **`fork`** specifically when you need to run another Node.js script as a separate process and require two-way communication (IPC).
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+366. ### How does Node.js clustering work? What problems does it aim to solve, and what are its limitations or considerations for highly scalable applications?
+
+Node.js clustering is a built-in module that allows you to leverage multiple CPU cores on a single machine. While Node.js itself uses a single-threaded event loop, clustering enables you to run multiple instances of your Node.js application (workers) that share the same server port.
+
+### How Node.js Clustering Works
+
+Imagine your Node.js server as a restaurant. By default, you have one chef (your single Node.js process) handling all orders. If many customers arrive, that one chef can get overwhelmed.
+
+Clustering is like hiring multiple chefs to work in the same kitchen.
+1.  **Master Process:** One special Node.js process acts as a "manager." Its primary job is to create and oversee "worker" processes.
+2.  **Worker Processes:** These are independent Node.js instances that actually handle incoming client requests. They are children of the master process and share the same server port. The operating system typically distributes incoming connections among these workers using a round-robin approach.
+
+This allows your application to utilize all available CPU cores.
+
+```
+       [ Client Request ]
+              |
+      +-------+-------+
+      |  Master Process | (Manager - Creates & monitors workers)
+      +-------+-------+
+          /   |   \
+         /    |    \
+   [Worker 1][Worker 2][Worker 3] (Handle client requests)
+      ^        ^        ^
+      |________|________|
+      Shared Server Port (e.g., 8000)
+```
+
+**Code Example (Simplified):**
+
+```javascript
+const cluster = require('cluster');
+const http = require('http');
+const numCPUs = require('os').cpus().length; // Get number of CPU cores
+
+if (cluster.isMaster) {
+  console.log(`Master ${process.pid} is running.`);
+  // Fork workers for each CPU core
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died. Forking a new one.`);
+    cluster.fork(); // Replace dead worker
+  });
+} else {
+  // Worker processes share the same HTTP server port
+  http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end(`Hello from Worker ${process.pid}!`);
+  }).listen(8000);
+  console.log(`Worker ${process.pid} started.`);
+}
+```
+
+### Problems It Aims to Solve
+
+1.  **CPU Core Utilization:** Node.js, by default, runs on a single CPU core. Clustering allows your application to effectively use all available CPU cores on a machine, significantly improving performance for CPU-bound tasks.
+2.  **High Availability & Fault Tolerance:** If one worker process crashes due to an unhandled error, the other workers continue to serve requests. The master process can detect the crash and automatically restart a new worker, enhancing application resilience.
+
+### Limitations & Considerations for Highly Scalable Applications
+
+1.  **State Management:** Workers are independent processes and do not share memory. Any application state (like in-memory caches, user sessions) must be managed externally (e.g., using a database, Redis, or a shared memory store) rather than within individual worker processes.
+2.  **Inter-Process Communication (IPC):** While workers can communicate with the master process (and indirectly with each other) using IPC, frequent communication adds overhead and complexity. Design your application to minimize the need for IPC.
+3.  **Load Balancing:** The `cluster` module's default load balancing (OS-level round-robin) is basic. For advanced load balancing features (e.g., sticky sessions, specific routing rules, SSL termination), an external load balancer (like Nginx, HAProxy, or cloud load balancers) is often necessary.
+4.  **Overhead:** Running multiple processes consumes more memory and introduces some overhead for context switching. This is generally outweighed by the benefits for CPU-intensive workloads.
+
+### Summary
+
+Node.js clustering is a powerful way to make your application more performant by utilizing multi-core CPUs and more resilient by isolating processes. However, it introduces challenges with state management and requires careful consideration of external load balancing for robust, highly scalable production deployments.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+367. ### Compare and contrast `async/await` with traditional Promises (using `.then().catch()`). Provide a scenario where `async/await` might lead to cleaner or more maintainable code.
+
+In JavaScript, when you deal with operations that take time (like fetching data from a server or reading a file), these are called **asynchronous operations**. Both Promises (with `.then().catch()`) and `async/await` are tools to manage these operations effectively, preventing your program from freezing while it waits.
+
+---
+
+### Traditional Promises (`.then().catch()`)
+
+A `Promise` is an object representing the eventual completion or failure of an asynchronous operation and its resulting value. Think of it like placing an order at a restaurant: you get a "promise" that your food will eventually arrive.
+
+*   You use the `.then()` method to specify what should happen **if the Promise succeeds** (your food arrives).
+*   You use the `.catch()` method to specify what should happen **if the Promise fails** (they burn your food).
+
+**Code Example:**
+
+```javascript
+function fetchDataPromise() {
+  fetch('https://api.example.com/data') // Returns a Promise
+    .then(response => response.json()) // Chaining .then() for sequential steps
+    .then(data => console.log('Promise Data:', data))
+    .catch(error => console.error('Promise Error:', error)); // Handles any error in the chain
+}
+```
+
+---
+
+### `async/await`
+
+`async/await` is a modern JavaScript syntax built on top of Promises, designed to make asynchronous code look and behave more like synchronous code, making it easier to read and write.
+
+*   The `async` keyword before a function declaration means that the function will always return a Promise.
+*   The `await` keyword can only be used inside an `async` function. It pauses the execution of the `async` function until the Promise it's waiting for settles (resolves or rejects). Once settled, it "unwraps" the resolved value. If the Promise rejects, `await` throws an error, which can be caught by a `try...catch` block.
+
+**Code Example:**
+
+```javascript
+async function fetchDataAsyncAwait() {
+  try {
+    const response = await fetch('https://api.example.com/data'); // Pauses until fetch is done
+    const data = await response.json(); // Pauses until JSON parsing is done
+    console.log('Async/Await Data:', data);
+  } catch (error) {
+    console.error('Async/Await Error:', error); // Handles errors like synchronous code
+  }
+}
+```
+
+---
+
+### Comparison
+
+| Feature           | Traditional Promises (`.then().catch()`)           | `async/await`                                         |
+| :---------------- | :------------------------------------------------- | :---------------------------------------------------- |
+| **Foundation**    | Directly uses Promise objects and their methods.   | Built *on top* of Promises as "syntactic sugar."      |
+| **Syntax**        | Uses callback functions passed to `.then()` and `.catch()`. | Uses `async` and `await` keywords, looks synchronous. |
+| **Error Handling**| Dedicated `.catch()` method for the Promise chain. | Standard `try...catch` blocks.                        |
+| **Readability**   | Can become nested ("callback hell") with many sequential operations. | Often much cleaner, especially for sequential steps.  |
+
+---
+
+### Scenario: Sequential Data Fetching
+
+Imagine you need to fetch a user's profile, and *then* use their ID from that profile to fetch their list of posts.
+
+**With Traditional Promises:**
+
+```javascript
+function getUserAndPostsPromise(userId) {
+  fetch(`/users/${userId}`)
+    .then(response => response.json())
+    .then(userData => {
+      // Need to return another promise here
+      return fetch(`/posts?userId=${userData.id}`);
+    })
+    .then(postsResponse => postsResponse.json())
+    .then(postsData => console.log('User Posts:', postsData))
+    .catch(error => console.error('Error:', error));
+}
+```
+
+**With `async/await` (Cleaner and More Maintainable):**
+
+```javascript
+async function getUserAndPostsAsyncAwait(userId) {
+  try {
+    const userResponse = await fetch(`/users/${userId}`); // Wait for user data
+    const userData = await userResponse.json();
+
+    const postsResponse = await fetch(`/posts?userId=${userData.id}`); // Wait for posts
+    const postsData = await postsResponse.json();
+
+    console.log('User Posts:', postsData);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+```
+
+In the `async/await` example, the code reads like a series of synchronous steps: "get user, then get posts." This flow is much easier to follow than the nested or chained `.then()` calls, making it significantly more readable and maintainable, especially as the number of sequential asynchronous operations grows.
+
+---
+
+### Summary
+
+`async/await` provides a cleaner, more readable, and more maintainable way to write asynchronous JavaScript code, particularly for sequences of operations. While it's built on Promises, it offers a more intuitive syntax that resembles traditional synchronous code, simplifying complex asynchronous workflows and error handling.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+368. ### You're observing high CPU usage in a Node.js application. What steps would you take to diagnose and troubleshoot the performance bottleneck?
+
+You're observing high CPU usage in a Node.js application – a common challenge! It's like a busy restaurant kitchen where one chef is overwhelmed, slowing down everything. Here's how I'd diagnose and troubleshoot:
+
+### Diagnosing High CPU Usage in Node.js
+
+1.  **Confirm the High CPU (System Level)**
+    First, I'd verify the problem isn't just an assumption.
+    *   **Linux/macOS:** Use the `top` command in the terminal. It shows processes and their CPU/memory usage. Look for your Node.js process using a significant percentage.
+    *   **Windows:** Use Task Manager (Ctrl+Shift+Esc), navigate to the "Processes" tab, and sort by "CPU" to pinpoint the Node.js process.
+
+2.  **Profile the Node.js Application (Code Level)**
+    Once confirmed, the next step is to understand *what specific parts* of the Node.js code are consuming the CPU. This is called **profiling**.
+    *   **`node --inspect` + Chrome DevTools:** This is my go-to, beginner-friendly method.
+        *   **Start your application with the inspect flag:**
+            ```bash
+            node --inspect server.js
+            ```
+            (Replace `server.js` with your main application file.)
+        *   This will output a URL like `ws://127.0.0.1:9229/...`.
+        *   Open Google Chrome, type `chrome://inspect` in the address bar, and click "Open dedicated DevTools for Node."
+        *   In the DevTools, go to the **"Performance"** tab.
+        *   Click the "Record" (circle) button to start profiling while you reproduce the high CPU load (e.g., hit the problematic API endpoint).
+        *   After a short period (10-30 seconds), click "Stop."
+
+    *   **What to look for:** The "Flame Chart" view. This visualizes your application's call stack over time. Tall, wide blocks indicate functions or parts of your code that consume a lot of CPU. Look for:
+        *   **Long-running synchronous operations:** Node.js is single-threaded. Any heavy, non-asynchronous task blocks the entire event loop.
+        *   **Tight loops:** Loops that iterate many times or perform complex calculations.
+        *   **Expensive Regular Expressions:** Complex regex patterns can be CPU-intensive.
+
+3.  **Analyze and Identify the Bottleneck**
+    With the profile data, I'd analyze the flame graph to pinpoint the exact functions or lines of code responsible for the high CPU. It's like finding the one congested lane on a highway.
+
+### Troubleshooting and Optimization
+
+Once the bottleneck is identified:
+
+1.  **Optimize Algorithms:** Can the code be written more efficiently? (e.g., reducing iterations, using more efficient data structures).
+2.  **Offload Heavy Tasks:** For CPU-intensive operations (like image processing, heavy computations):
+    *   **Worker Threads:** Node.js has built-in `worker_threads` to run CPU-bound tasks in separate threads without blocking the main event loop.
+    *   **External Services:** Delegate tasks to a dedicated service or a queue (e.g., a message queue like RabbitMQ or Kafka) to be processed asynchronously.
+3.  **Caching:** If certain computations are repeated, cache their results.
+
+**Summary:**
+Diagnosing high CPU in Node.js involves a two-step process: first, confirming the issue with system tools (`top`/Task Manager), then **profiling the application with `node --inspect` and Chrome DevTools** to identify the exact code bottleneck. Troubleshooting then focuses on optimizing that specific code, offloading heavy tasks, or implementing caching.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+369. ### Describe common causes of memory leaks in Node.js applications. What tools and techniques would you use to identify and mitigate them?
+
+As an experienced technical interviewer, I'd define a memory leak simply as a situation where your application unintentionally holds onto memory that it no longer needs. This prevents the garbage collector from reclaiming it, leading to increased memory consumption, slower performance, and eventually application crashes.
+
+Imagine a restaurant that keeps stacking dirty dishes in the back, but never washes them. Eventually, the kitchen runs out of space, even if new food isn't being prepared. That's like a memory leak—memory (dishes) isn't being freed.
+
+### Common Causes of Memory Leaks in Node.js
+
+1.  **Unbounded Caches or Global Variables:**
+    Storing data in global arrays, objects, or caches without a mechanism to remove old or unused items. If the application keeps adding data to such a structure, it will grow indefinitely.
+    *   *Example:* A `global.cache = {}` that just keeps adding user sessions without ever expiring them.
+
+2.  **Unregistered Event Listeners:**
+    When you attach an event listener (e.g., using `EventEmitter.on()`) but fail to remove it (`EventEmitter.removeListener()` or `off()`) when the object or component it's listening to is destroyed or no longer needed. The event emitter retains a reference to the listener and its closure, preventing their garbage collection.
+
+3.  **Unstopped Timers (`setInterval`, `setTimeout`):**
+    If `setInterval` or `setTimeout` functions are initiated but never cleared using `clearInterval()` or `clearTimeout()`, their callback functions and the scope they enclose remain in memory indefinitely, even if the work they were meant to do is no longer relevant.
+
+    ```javascript
+    // Leaky example: Timer that runs forever and captures 'data'
+    let data = { largeObject: new Array(1000000).fill('a') };
+    setInterval(() => {
+        // This function and 'data' will never be garbage collected
+        console.log('Doing something with data...');
+    }, 1000);
+
+    // To prevent the leak, you'd need:
+    // const timerId = setInterval(...);
+    // clearInterval(timerId);
+    ```
+
+### Tools and Techniques to Identify and Mitigate
+
+#### Identification Tools:
+
+1.  **`process.memoryUsage()`:** A built-in Node.js API that provides basic memory statistics (`rss`, `heapTotal`, `heapUsed`). You can log this periodically to observe trends in memory growth.
+    ```javascript
+    setInterval(() => {
+      const mu = process.memoryUsage();
+      console.log(`Heap Used: ${(mu.heapUsed / 1024 / 1024).toFixed(2)} MB`);
+    }, 5000);
+    ```
+2.  **Chrome DevTools (Memory Tab):**
+    *   Run your Node.js app with `node --inspect <your-app.js>`.
+    *   Open Chrome DevTools, click the Node.js icon, and go to the "Memory" tab.
+    *   Take **Heap Snapshots** at different points in your application's lifecycle (e.g., before and after an operation that might cause a leak). Comparing snapshots can reveal objects that are growing in count or size and should have been garbage collected.
+
+#### Mitigation Techniques:
+
+1.  **Clear Timers:** Always use `clearInterval()` for `setInterval` and `clearTimeout()` for `setTimeout` when they are no longer needed.
+2.  **Remove Event Listeners:** For every `on()` or `addListener()`, ensure there's a corresponding `off()` or `removeListener()` call when the object or component is being cleaned up.
+3.  **Implement Bounded Caches:** Use caching strategies like LRU (Least Recently Used) eviction policies or set size limits for any in-memory caches. Consider using `WeakMap` or `WeakSet` if you need to store references to objects without preventing them from being garbage collected when no other strong references exist.
+4.  **Careful Global Variable Usage:** Minimize the use of global variables. If unavoidable, ensure their contents are managed and cleaned up appropriately.
+5.  **Code Reviews:** Regularly review code for patterns that commonly lead to leaks, like unmanaged timers or event listeners.
+
+### Summary
+
+Memory leaks in Node.js are often caused by unintentionally holding onto references to data or functions (especially within closures, event listeners, or timers). Identifying them involves monitoring memory usage and analyzing heap snapshots. Mitigation primarily focuses on disciplined coding practices: always clearing timers, removing event listeners, and managing cache sizes effectively.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+370. ### When designing a resilient and scalable Node.js microservice architecture, what considerations would you make regarding inter-service communication, state management, and data consistency?
+
+Designing a resilient and scalable Node.js microservice architecture requires careful thought about how independent services interact and manage their information.
+
+### Inter-service Communication
+
+This is how your services "talk" to each other. We need efficient and robust methods.
+
+1.  **Synchronous Communication (e.g., REST/HTTP):**
+    *   **Concept:** One service makes a direct request to another and waits for a response, like making a phone call.
+    *   **Node.js Example:** A `UserService` might call an `OrderService` to get a user's order history.
+        ```javascript
+        // In UserService
+        async function getUserOrders(userId) {
+            const response = await fetch(`http://order-service/users/${userId}/orders`);
+            return response.json();
+        }
+        ```
+    *   **Considerations:**
+        *   **Latency:** Direct calls can introduce delays.
+        *   **Failure:** If `OrderService` is down, `UserService` fails too.
+        *   **Service Discovery:** How does `UserService` know where `OrderService` is? (e.g., using a service registry like Eureka or Consul).
+
+2.  **Asynchronous Communication (e.g., Message Queues):**
+    *   **Concept:** Services send messages to a queue without waiting for an immediate response, like sending an email. Another service can pick up the message later.
+    *   **Node.js Example:** A `PaymentService` might send a "payment processed" event to a queue, which an `OrderService` consumes to update order status.
+        ```javascript
+        // In PaymentService (sending)
+        messageQueue.publish('payment_processed', { orderId: 'abc', status: 'paid' });
+
+        // In OrderService (receiving)
+        messageQueue.subscribe('payment_processed', (message) => {
+            // Update order status based on message.orderId
+        });
+        ```
+    *   **Considerations:**
+        *   **Decoupling:** Services don't directly depend on each other's availability.
+        *   **Resilience:** Messages can be reprocessed if a service fails.
+        *   **Scalability:** Queues handle spikes in load.
+        *   **Complexity:** More moving parts (the message queue itself).
+
+### State Management
+
+In microservices, we aim for **stateless services**.
+
+1.  **Concept:** A service doesn't store any data unique to a specific user's session or request in its own memory. All necessary data is fetched from external sources.
+2.  **Analogy:** Imagine a busy cashier who doesn't remember your last order. They always look up your details from a central database.
+3.  **Considerations:**
+    *   **Externalize State:** Store data in external databases (SQL, NoSQL), caches (Redis, Memcached), or object storage.
+    *   **Scalability:** Stateless services are easier to scale horizontally (just add more instances).
+    *   **Resilience:** If a service instance crashes, another can seamlessly take over without losing any in-progress work.
+
+### Data Consistency
+
+This ensures data remains correct and synchronized across services, even though each service owns its own data.
+
+1.  **Challenge:** Since services have independent databases, keeping data consistent across them is complex.
+2.  **Eventual Consistency:**
+    *   **Concept:** Data doesn't have to be immediately consistent across all services, but it *will* become consistent over time.
+    *   **Analogy:** When you transfer money between banks, it might not show up instantly in the recipient's account, but it will eventually.
+    *   **Implementation:** Often achieved using asynchronous messaging (events). When `Service A` changes its data, it publishes an event. `Service B` consumes this event and updates its own data.
+    *   **Considerations:**
+        *   **High Scalability:** Excellent for high-throughput systems where immediate consistency isn't critical.
+        *   **Complexity:** Requires careful handling of potential inconsistencies during the "eventual" period. Need strategies for retries and handling failed updates (e.g., idempotent operations).
+        *   **Distributed Transactions:** Generally avoided in microservices due to their complexity, performance overhead, and tight coupling. Eventual consistency is usually preferred.
+
+### Summary
+
+For resilient and scalable Node.js microservices:
+*   Use a mix of **synchronous (REST)** for direct queries and **asynchronous (Message Queues)** for decoupled, resilient workflows.
+*   Design services to be **stateless**, pushing data storage to external databases and caches.
+*   Embrace **eventual consistency** for data across services, leveraging events and message queues for synchronization, prioritizing scalability over immediate global consistency.
 
 **[⬆ Back to Top](#table-of-contents)**
 
