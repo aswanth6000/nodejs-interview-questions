@@ -672,6 +672,16 @@
 | 663 | [What are common causes of memory leaks in Node.js applications? Describe a systematic approach to diagnose and mitigate such leaks in a production environment.](#what-are-common-causes-of-memory-leaks-in-node.js-applications-describe-a-systematic-approach-to-diagnose-and-mitigate-such-leaks-in-a-production-environment.) |
 | 664 | [Compare and contrast callbacks, Promises, and `async/await` for managing asynchronous operations in Node.js. In what specific scenarios might you still opt to use callbacks over Promises or `async/await`?](#compare-and-contrast-callbacks-promises-and-asyncawait-for-managing-asynchronous-operations-in-node.js.-in-what-specific-scenarios-might-you-still-opt-to-use-callbacks-over-promises-or-asyncawait) |
 | 665 | [You are tasked with designing a high-traffic, real-time API using Node.js. Outline a robust architecture for deploying and scaling this application, considering aspects like load balancing, database interactions, horizontal scaling, and inter-service communication patterns.](#you-are-tasked-with-designing-a-high-traffic-real-time-api-using-node.js.-outline-a-robust-architecture-for-deploying-and-scaling-this-application-considering-aspects-like-load-balancing-database-interactions-horizontal-scaling-and-inter-service-communication-patterns.) |
+| 666 | [How does the Node.js event loop work, and what role does it play in Node's non-blocking I/O model?](#how-does-the-node.js-event-loop-work-and-what-role-does-it-play-in-node's-non-blocking-io-model) |
+| 667 | [Discuss the differences between `require` (CommonJS) and `import` (ES Modules) in Node.js, including their implications for module loading, scoping, and interoperability.](#discuss-the-differences-between-require-(commonjs)-and-import-(es-modules)-in-node.js-including-their-implications-for-module-loading-scoping-and-interoperability.) |
+| 668 | [Describe common error handling strategies in an Express.js application, including synchronous errors, asynchronous errors, and unhandled promise rejections. How would you prevent a single error from crashing the entire Node process?](#describe-common-error-handling-strategies-in-an-express.js-application-including-synchronous-errors-asynchronous-errors-and-unhandled-promise-rejections.-how-would-you-prevent-a-single-error-from-crashing-the-entire-node-process) |
+| 669 | [Explain the concept of Node.js Streams. When would you choose to use a stream over buffering data in memory, and provide a practical example of its application.](#explain-the-concept-of-node.js-streams.-when-would-you-choose-to-use-a-stream-over-buffering-data-in-memory-and-provide-a-practical-example-of-its-application.) |
+| 670 | [How can you leverage the Node.js `cluster` module to improve the performance and reliability of a multi-core Node.js application? What are some challenges or considerations when using clustering?](#how-can-you-leverage-the-node.js-cluster-module-to-improve-the-performance-and-reliability-of-a-multi-core-node.js-application-what-are-some-challenges-or-considerations-when-using-clustering) |
+| 671 | [Explain the difference in execution order and common use cases for `process.nextTick()` versus `setImmediate()` within the Node.js event loop.](#explain-the-difference-in-execution-order-and-common-use-cases-for-process.nexttick()-versus-setimmediate()-within-the-node.js-event-loop.) |
+| 672 | [You're building a highly concurrent web API with Node.js that involves significant CPU-bound processing for each request. Beyond using the `cluster` module, what other architectural or coding strategies would you employ to optimize its performance and responsiveness?](#you're-building-a-highly-concurrent-web-api-with-node.js-that-involves-significant-cpu-bound-processing-for-each-request.-beyond-using-the-cluster-module-what-other-architectural-or-coding-strategies-would-you-employ-to-optimize-its-performance-and-responsiveness) |
+| 673 | [Identify three common security vulnerabilities in Node.js applications and describe specific mitigation strategies for each.](#identify-three-common-security-vulnerabilities-in-node.js-applications-and-describe-specific-mitigation-strategies-for-each.) |
+| 674 | [Compare and contrast using `async/await` with traditional callback-based approaches for managing asynchronous operations in Node.js. Provide scenarios where one might be preferred over the other.](#compare-and-contrast-using-asyncawait-with-traditional-callback-based-approaches-for-managing-asynchronous-operations-in-node.js.-provide-scenarios-where-one-might-be-preferred-over-the-other.) |
+| 675 | [Describe the module resolution algorithm that Node.js follows when you `require('some-module')`. How does it locate core modules, `node_modules` packages, and local files?](#describe-the-module-resolution-algorithm-that-node.js-follows-when-you-require('some-module').-how-does-it-locate-core-modules-node_modules-packages-and-local-files) |
 
 1. ### What is Node.js?
 
@@ -47786,6 +47796,783 @@ As your application grows, you might split it into smaller, independent services
 ### Summary
 
 A robust architecture for a high-traffic, real-time Node.js API relies on distributing load via a **load balancer**, **horizontal scaling** of Node.js instances, a **scalable database** with caching, and intelligent **inter-service communication** (HTTP/message queues), all managed efficiently through containerization and orchestration.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+
+666. ### How does the Node.js event loop work, and what role does it play in Node's non-blocking I/O model?
+
+The Node.js event loop is a crucial part of its architecture, enabling its **non-blocking I/O** (Input/Output) model despite running on a single thread.
+
+### What is the Node.js Event Loop?
+
+Imagine you're a single chef in a busy restaurant. You can only cook one dish at a time. The event loop is like your internal manager: it constantly checks for new orders and dishes that are ready to be served.
+
+In Node.js terms:
+*   Node.js runs on a **single main thread**.
+*   The event loop is a **never-ending cycle** that continuously monitors two things:
+    1.  The **Call Stack**: What Node is currently executing.
+    2.  The **Callback Queue**: A list of tasks (functions) that are ready to be executed once the Call Stack is empty.
+
+### How it Works (Simplified)
+
+1.  Node executes your JavaScript code line by line, pushing functions onto the **Call Stack**.
+2.  If Node encounters an **asynchronous operation** (like reading a file, a network request, or a `setTimeout`), it **offloads** that operation. It tells the underlying system (or a worker thread) to handle it.
+3.  Node **does not wait** for this operation to finish. It immediately pops the asynchronous function off the Call Stack and continues executing the rest of your JavaScript code.
+4.  When the offloaded operation completes, its **callback function** (the code that should run when the operation is done) is placed into the **Callback Queue**.
+5.  The **event loop's job** is to constantly check: "Is the Call Stack empty?" If yes, it takes the **first callback** from the Callback Queue and pushes it onto the Call Stack for execution.
+
+### Role in Non-Blocking I/O
+
+This mechanism is key to Node's non-blocking I/O model:
+
+*   **Non-blocking**: Node doesn't *wait* for slow I/O operations (like fetching data from a database or a file) to complete. While one operation is pending, Node can process other tasks.
+*   **Efficiency**: The single thread remains busy, constantly processing available code or offloading new tasks, leading to high performance for concurrent operations.
+
+**Example:**
+
+```javascript
+console.log("1. Start of script");
+
+setTimeout(() => {
+  console.log("3. This runs AFTER 2 seconds (async task)");
+}, 2000); // Offloaded, callback queued after 2s
+
+const fs = require('fs');
+fs.readFile('example.txt', 'utf8', (err, data) => {
+  console.log("4. File read complete (async task)");
+}); // Offloaded, callback queued when file is read
+
+console.log("2. End of script (this runs BEFORE async tasks finish)");
+```
+
+**Output:**
+
+```
+1. Start of script
+2. End of script (this runs BEFORE async tasks finish)
+4. File read complete (async task)
+3. This runs AFTER 2 seconds (async task)
+```
+
+In the example:
+*   `console.log("1...")` and `console.log("2...")` run synchronously.
+*   `setTimeout` and `fs.readFile` are **offloaded**. Node doesn't wait for them.
+*   `console.log("2...")` executes immediately after the async tasks are initiated.
+*   Only *after* the Call Stack is empty does the event loop pick up the callbacks from the `fs.readFile` and `setTimeout` (when their respective operations complete) from the Callback Queue. The file read callback typically finishes before the 2-second timeout.
+
+### Summary
+
+The Node.js event loop allows a single-threaded JavaScript environment to handle many operations concurrently without blocking. It constantly monitors the Call Stack and Callback Queue, ensuring that I/O-bound tasks are offloaded and their results (callbacks) are executed efficiently when the main thread is free, making Node.js incredibly fast and scalable for I/O-heavy applications.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+667. ### Discuss the differences between `require` (CommonJS) and `import` (ES Modules) in Node.js, including their implications for module loading, scoping, and interoperability.
+
+Here's a detailed, beginner-friendly explanation of `require` and `import` in Node.js:
+
+---
+
+### `require` (CommonJS) vs. `import` (ES Modules) in Node.js
+
+Node.js offers two distinct ways to manage and use code modules: `require` (part of the CommonJS standard) and `import` (part of the ECMAScript Modules, or ES Modules standard). Understanding their differences is key for modern JavaScript development.
+
+---
+
+#### `require` (CommonJS)
+
+The `require` syntax is Node.js's original and default module system.
+
+*   **Module Loading**: Modules are loaded **synchronously**. This means when you call `require()`, your program pauses until the module is fully loaded and available.
+    *   **Analogy**: Imagine ordering a pizza. You call the shop, wait on the phone until they confirm your order, and only then can you proceed with your evening.
+*   **Scoping**: Each CommonJS module has its own private scope. To expose code, you explicitly assign properties to `module.exports` or `exports`. To use code from another file, you use `require()`.
+*   **Return Value**: `require()` returns a **copy** of the exported values. If the original module's internal variables change later, your imported copy won't automatically update.
+*   **Usage**: Common in older Node.js projects. No special configuration is needed for `.js` files.
+
+    **Example:**
+    ```javascript
+    // mathUtils.js
+    function add(a, b) { return a + b; }
+    module.exports = { add }; // Exporting the 'add' function
+
+    // app.js
+    const math = require('./mathUtils'); // Importing the module
+    console.log(math.add(5, 3)); // Output: 8
+    ```
+
+---
+
+#### `import` (ES Modules)
+
+The `import` syntax is the official standard for JavaScript modules, both in browsers and increasingly in Node.js.
+
+*   **Module Loading**: Modules are loaded **asynchronously** and are **statically** analyzed. This means Node.js can understand dependencies and load modules *before* your code even starts running, allowing for optimizations like "tree shaking" (removing unused code during bundling).
+    *   **Analogy**: You place an online order for a book. You get a confirmation and can continue browsing or doing other things while the order is processed and delivered later.
+*   **Scoping**: ES Modules use top-level `export` and `import` statements. Variables are directly `export`ed and `import`ed by name or as a default.
+*   **Return Value**: `import` provides **live bindings** (references). If a variable in the original module changes, your imported value will reflect that change.
+*   **Usage**: Requires either naming files with a `.mjs` extension or setting `"type": "module"` in your `package.json` file.
+
+    **Example:**
+    ```javascript
+    // mathUtils.js
+    export function subtract(a, b) { return a - b; } // Exporting by name
+
+    // app.js
+    import { subtract } from './mathUtils.js'; // Importing by name
+    console.log(subtract(10, 4)); // Output: 6
+    ```
+
+---
+
+#### Key Differences & Implications
+
+*   **Loading Mechanism**: `require` blocks execution (synchronous), while `import` is non-blocking (asynchronous and static), leading to better performance and optimization opportunities for ES Modules.
+*   **Static vs. Dynamic**: `import`'s static nature allows build tools to perform "tree shaking" and detect errors earlier. `require` is dynamic, making such advanced analysis harder.
+*   **Live Bindings**: `import` offers live references to exported values, meaning changes in the source module propagate. `require` provides copies, which remain fixed at the time of import.
+*   **Interoperability**:
+    *   An ES Module can typically `import` a CommonJS module.
+    *   A CommonJS module **cannot directly** `require` an ES Module. To load an ES Module from a CommonJS context, you must use dynamic `import()` (which returns a Promise).
+
+---
+
+#### Summary
+
+*   **`require` (CommonJS)**: The traditional, synchronous, dynamic system in Node.js that works with copies. Good for older projects.
+*   **`import` (ES Modules)**: The modern, asynchronous, static standard that provides live bindings. Offers better performance, optimization, and aligns with browser JavaScript. Recommended for new Node.js development.
+
+As Node.js evolves, ES Modules are becoming the preferred and standard way to organize code, moving towards a unified JavaScript ecosystem.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+668. ### Describe common error handling strategies in an Express.js application, including synchronous errors, asynchronous errors, and unhandled promise rejections. How would you prevent a single error from crashing the entire Node process?
+
+Error handling is crucial for building robust Express.js applications, ensuring graceful recovery from issues and preventing your server from crashing.
+
+Here are common strategies:
+
+### 1. Express Error Handling Middleware
+
+The core strategy in Express is a dedicated error-handling middleware function, which has a unique signature: `(err, req, res, next)`.
+
+*   **Synchronous Errors:**
+    Express automatically catches synchronous errors (e.g., `throw new Error()`) that occur directly within route handlers or other middleware. It then passes these errors to your error-handling middleware.
+
+    ```javascript
+    app.get('/sync-error', (req, res, next) => {
+        throw new Error('Something went wrong synchronously!');
+    });
+    ```
+
+*   **Asynchronous Errors:**
+    For errors in asynchronous code (like database calls, `async/await`), Express *does not* automatically catch them. You must explicitly pass the error to the `next()` function within a `catch` block. This `next(err)` then forwards the error to your error-handling middleware.
+
+    ```javascript
+    app.get('/async-error', async (req, res, next) => {
+        try {
+            // Simulate an async operation that fails
+            await Promise.reject(new Error('Failed asynchronously!'));
+            res.send('This will not be sent');
+        } catch (err) {
+            next(err); // Pass the async error to the error middleware
+        }
+    });
+    ```
+
+*   **Implementing the Error Middleware:**
+    This middleware should be defined *after* all your other routes and middleware.
+
+    ```javascript
+    app.use((err, req, res, next) => {
+        console.error(err.stack); // Log the error stack for debugging
+        res.status(500).send('Oops! Something broke!');
+    });
+    ```
+
+### 2. Unhandled Promise Rejections
+
+If an `async` function or a Promise rejects without a `.catch()` handler, it becomes an "unhandled promise rejection." Node.js, by default, will terminate the process for these in newer versions.
+
+To prevent an abrupt crash, you can set up a global listener:
+
+```javascript
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // Log the error, perform cleanup, and then gracefully exit.
+    // process.exit(1); // Critical bug, usually requires restart
+});
+```
+
+### 3. Preventing Node Process Crashes
+
+To prevent a single, uncaught error from crashing the entire Node.js process:
+
+*   **`process.on('uncaughtException')`**: This catches synchronous errors that were *not* caught by `try/catch` blocks or handled by Express middleware (e.g., errors thrown outside Express's request-response cycle).
+*   **`process.on('unhandledRejection')`**: As described above, this catches promises that reject without a `.catch()` handler.
+
+**Crucially**: While these listeners prevent immediate crashes, they indicate serious bugs. The application might be in an inconsistent state. Best practice is to **log the error, perform any necessary cleanup (synchronously), and then gracefully shut down the application** (e.g., `process.exit(1)`), relying on a process manager (like PM2 or Kubernetes) to restart it. **Do not attempt to continue normal operations** after these global events.
+
+```javascript
+process.on('uncaughtException', (err) => {
+    console.error('Caught Uncaught Exception:', err);
+    // Log error, send alert, perform synchronous cleanup
+    process.exit(1); // Exit process immediately
+});
+```
+
+### Summary
+
+Effective error handling in Express involves a dedicated `(err, req, res, next)` middleware for synchronous and asynchronous route errors. For critical, unhandled errors that might bypass Express, global `process` listeners (`unhandledRejection`, `uncaughtException`) act as a last resort, enabling logging and graceful process shutdown, rather than attempting to recover from a potentially corrupted state.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+669. ### Explain the concept of Node.js Streams. When would you choose to use a stream over buffering data in memory, and provide a practical example of its application.
+
+### Explaining Node.js Streams
+
+In Node.js, **Streams** are a fundamental concept for handling data efficiently. Imagine data flowing like water through a pipe, rather than being collected in a big bucket all at once. Streams allow you to process data in small, manageable chunks, as it becomes available, instead of loading everything into memory first.
+
+Think of it this way:
+*   **Buffering** (loading data into memory): Is like filling a bathtub completely, then carrying the whole tub somewhere. You need enough space for the whole tub, and you can't move it until it's full.
+*   **Streaming**: Is like connecting a hose directly from the tap to where you need the water. Water flows continuously, you don't need a huge tub, and water starts arriving immediately.
+
+#### When to Use Streams Over Buffering
+
+You would choose to use streams over buffering data in memory primarily for two reasons:
+
+1.  **Memory Efficiency:** When dealing with very large files or network data that might exceed your available RAM. If you tried to buffer a 10GB file into memory on a machine with 8GB RAM, your application would crash. Streams process data chunk by chunk, keeping memory usage low and constant.
+2.  **Time Efficiency:** Streams allow you to start processing data as soon as the first chunk arrives, rather than waiting for the entire dataset to be loaded. This can significantly reduce the perceived latency for users.
+
+#### Practical Example: Copying a Large File
+
+Let's say you need to copy a huge log file from one location to another.
+
+**Without streams (buffering):**
+
+```javascript
+const fs = require('fs');
+
+// DO NOT DO THIS FOR LARGE FILES!
+fs.readFile('large-input.txt', (err, data) => {
+  if (err) throw err;
+  fs.writeFile('large-output.txt', data, (err) => {
+    if (err) throw err;
+    console.log('File copied (buffered).');
+  });
+});
+// This reads the ENTIRE 'large-input.txt' into the 'data' variable (memory)
+// before writing it.
+```
+
+**With streams:**
+
+```javascript
+const fs = require('fs');
+
+const readStream = fs.createReadStream('large-input.txt');
+const writeStream = fs.createWriteStream('large-output.txt');
+
+readStream.pipe(writeStream); // Connects the output of readStream to the input of writeStream
+
+readStream.on('end', () => {
+  console.log('File copied (streamed).');
+});
+
+readStream.on('error', (err) => {
+  console.error('Error reading file:', err);
+});
+writeStream.on('error', (err) => {
+  console.error('Error writing file:', err);
+});
+// Data flows directly from the input file to the output file in chunks.
+```
+
+In the stream example, `readStream.pipe(writeStream);` is the magic. `pipe()` connects the readable stream (`readStream`) to the writable stream (`writeStream`), automatically managing the flow of data in chunks. This uses significantly less memory because the entire file is never held in RAM at once.
+
+#### Summary
+
+Node.js Streams provide an efficient way to handle continuous data flow, especially for large datasets. They save memory and improve responsiveness by processing data chunk by chunk, making them essential for applications dealing with file I/O, network requests, and real-time data processing.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+670. ### How can you leverage the Node.js `cluster` module to improve the performance and reliability of a multi-core Node.js application? What are some challenges or considerations when using clustering?
+
+The Node.js `cluster` module is a powerful tool designed to leverage multi-core CPU systems, significantly improving both the performance and reliability of your applications.
+
+### How `cluster` Improves Performance and Reliability
+
+Node.js, by default, runs as a single process, utilizing only one CPU core. While it's highly efficient for I/O operations, CPU-intensive tasks can block the entire process. The `cluster` module solves this by allowing you to create multiple "worker" processes that all share the same server port.
+
+1.  **Performance (Parallel Processing):**
+    *   **Concept:** Think of your Node.js application as a busy restaurant. Normally, you have just one chef (the single Node.js process) cooking all the orders (requests). If too many orders come in, that one chef gets overwhelmed.
+    *   **`cluster`'s Role:** The `cluster` module acts like a manager (the "master" process) who hires multiple chefs (the "worker" processes) to work in the same kitchen. Each worker process is an independent instance of your application. The master process distributes incoming requests among these workers, allowing your application to handle many more requests concurrently by utilizing all available CPU cores.
+    *   **Benefit:** Faster response times and higher throughput, especially for applications receiving a high volume of requests or performing CPU-bound computations.
+
+2.  **Reliability (Fault Tolerance):**
+    *   **Concept:** If that single chef makes a mistake and the entire kitchen shuts down, all orders are lost.
+    *   **`cluster`'s Role:** With multiple workers, if one worker process crashes due (e.g., an unhandled error), the other workers continue to run and serve requests without interruption. The master process can even detect a crashed worker and automatically restart a new one to replace it.
+    *   **Benefit:** Increased uptime and resilience, as a single point of failure no longer brings down the entire application.
+
+### Simple Code Example
+
+Here's how you might set up a clustered HTTP server:
+
+```javascript
+const cluster = require('node:cluster');
+const http = require('node:http');
+const numCPUs = require('node:os').cpus().length;
+
+if (cluster.isPrimary) {
+  // This is the master process
+  console.log(`Master ${process.pid} is running`);
+
+  // Fork workers for each CPU core
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died. Starting a new one...`);
+    cluster.fork(); // Replace the dead worker
+  });
+} else {
+  // This is a worker process
+  http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end(`Hello from Worker ${process.pid}!\n`);
+  }).listen(8000);
+
+  console.log(`Worker ${process.pid} started.`);
+}
+```
+
+### Challenges and Considerations
+
+While powerful, using `cluster` introduces some complexities:
+
+1.  **Shared State:** Worker processes do not share memory. If your application needs to maintain shared data (e.g., user sessions, cache), you'll need an external data store like a database (PostgreSQL, MongoDB) or a caching service (Redis).
+2.  **Inter-Process Communication (IPC):** If workers need to communicate with each other or the master process, you'll need to implement explicit messaging mechanisms (e.g., `process.send()`, `worker.send()`).
+3.  **Debugging:** Debugging a clustered application can be more complex as you have multiple independent processes running simultaneously.
+4.  **Resource Management:** While beneficial, each worker process consumes its own memory. Running too many workers (e.g., more than your CPU cores) can lead to increased memory usage and potentially context-switching overhead, diminishing performance gains.
+
+### Summary
+
+The Node.js `cluster` module is essential for building scalable and robust applications that can fully utilize modern multi-core processors. It boosts performance by distributing load across workers and enhances reliability by providing fault tolerance. However, it requires careful consideration of shared state and inter-process communication to avoid common pitfalls.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+671. ### Explain the difference in execution order and common use cases for `process.nextTick()` versus `setImmediate()` within the Node.js event loop.
+
+The Node.js event loop orchestrates when different parts of your code execute. `process.nextTick()` and `setImmediate()` are both used to defer execution, but they operate at different points within this loop, leading to distinct execution orders and use cases.
+
+---
+
+### Understanding the Event Loop (Simplified)
+
+Think of the Node.js event loop as a circular "to-do list" processor with different phases:
+
+1.  **Timers**: `setTimeout()` and `setInterval()` callbacks.
+2.  **Pending Callbacks**: System errors, etc.
+3.  **Poll (I/O)**: Handles network and file I/O callbacks (e.g., `fs.readFile`).
+4.  **Check**: `setImmediate()` callbacks.
+5.  **Close Callbacks**: `socket.on('close')`, etc.
+
+**Crucially**: `process.nextTick()` callbacks are not part of these main phases. They run *after* the current operation completes, but *before* the event loop proceeds to the *next phase*.
+
+---
+
+### `process.nextTick()`
+
+`process.nextTick()` schedules a callback to run *immediately* after the current operation finishes, but *before* any other I/O or timer callbacks get a chance to run in the current event loop iteration.
+
+*   **Execution Order**: It's like a "VIP pass" or a "quick urgent task" that must be done *right now* before anything else. It drains the `nextTick` queue *completely* before moving to the next event loop phase.
+*   **Common Use Cases**:
+    *   **Error Handling**: To ensure errors are propagated consistently in an asynchronous function.
+    *   **State Consistency**: To process something important *before* the event loop moves on, ensuring data consistency for the next operation.
+    *   **Unwinding the Stack**: To defer heavy synchronous work slightly without blocking the event loop *completely* from checking for errors or other crucial tasks.
+
+**Example:**
+```javascript
+console.log('1. Start');
+
+process.nextTick(() => {
+  console.log('3. process.nextTick() executed');
+});
+
+console.log('2. End');
+// Output:
+// 1. Start
+// 2. End
+// 3. process.nextTick() executed
+```
+Notice `nextTick` runs after the synchronous code finishes, but *before* `setImmediate` or timers.
+
+---
+
+### `setImmediate()`
+
+`setImmediate()` schedules a callback to execute in the "check" phase of the event loop. This means it runs *after* I/O operations (like file reads) and timers have had a chance to execute in the current iteration.
+
+*   **Execution Order**: It waits until the event loop has completed its current I/O and timer tasks before running. It's like a "to-do list item for the next logical step."
+*   **Common Use Cases**:
+    *   **Breaking Up Long Tasks**: To allow the event loop to breathe and handle other events, preventing a single long-running task from blocking.
+    *   **I/O Dependent Deferral**: To schedule code to run *after* any pending I/O callbacks are processed.
+    *   **Non-Blocking Deferral**: When you need to defer execution but don't need the immediate priority of `nextTick`.
+
+**Example:**
+```javascript
+console.log('1. Start');
+
+setImmediate(() => {
+  console.log('3. setImmediate() executed');
+});
+
+console.log('2. End');
+// Output:
+// 1. Start
+// 2. End
+// 3. setImmediate() executed
+```
+In a simple script, `setImmediate` also runs after synchronous code. The difference becomes apparent when combined with `nextTick` or I/O.
+
+---
+
+### Combined Example & Execution Order
+
+```javascript
+console.log('A');
+
+process.nextTick(() => {
+  console.log('B (process.nextTick)');
+});
+
+setImmediate(() => {
+  console.log('C (setImmediate)');
+});
+
+console.log('D');
+
+// Expected Output:
+// A
+// D
+// B (process.nextTick)
+// C (setImmediate)
+```
+This clearly demonstrates that `process.nextTick()` callbacks always run *before* `setImmediate()` callbacks if both are scheduled in the same turn of the event loop.
+
+---
+
+### Summary and Takeaway
+
+| Feature          | `process.nextTick()`                                | `setImmediate()`                                       |
+| :--------------- | :-------------------------------------------------- | :----------------------------------------------------- |
+| **Execution**    | Runs *before* the next event loop phase (high priority, "stay in current phase") | Runs *in its own "check" phase*, *after* I/O operations (lower priority, "go to next major step") |
+| **Use Case**     | Error handling, ensuring consistency, high-priority deferral | Breaking up long tasks, I/O dependent deferral         |
+
+**The key takeaway**: Use `process.nextTick()` for very urgent, almost synchronous-like deferrals within the current execution context. Use `setImmediate()` when you want to yield to the event loop, particularly allowing I/O operations to complete, before your deferred code runs.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+672. ### You're building a highly concurrent web API with Node.js that involves significant CPU-bound processing for each request. Beyond using the `cluster` module, what other architectural or coding strategies would you employ to optimize its performance and responsiveness?
+
+When facing a Node.js web API with significant CPU-bound processing *beyond* the `cluster` module, we need strategies to prevent these intensive tasks from blocking the main event loop and impacting responsiveness. Here are key approaches:
+
+### 1. Worker Threads (Native Parallelism)
+
+Node.js is single-threaded, meaning one CPU-bound task can freeze everything. `worker_threads` allow you to run JavaScript code in parallel in separate threads, offloading heavy computations from the main event loop.
+
+*   **Analogy:** Think of your main Node.js process as a busy chef taking orders. If a complex recipe (CPU-bound task) comes in, the chef can hand it off to a sous-chef (worker thread) in a separate kitchen to prepare, without stopping taking new orders.
+*   **Benefit:** Keeps your API responsive by ensuring the main event loop remains free to handle incoming requests.
+
+**Example:**
+
+`worker.js` (the CPU-bound task):
+```javascript
+// worker.js
+const { parentPort } = require('worker_threads');
+
+parentPort.on('message', (message) => {
+  // Simulate heavy computation (e.g., complex calculations, image processing)
+  let result = 0;
+  for (let i = 0; i < message.iterations; i++) {
+    result += Math.sqrt(i);
+  }
+  parentPort.postMessage(result); // Send result back
+});
+```
+
+`server.js` (main API):
+```javascript
+// server.js
+const http = require('http');
+const { Worker } = require('worker_threads');
+
+http.createServer((req, res) => {
+  if (req.url === '/heavy') {
+    const worker = new Worker('./worker.js');
+    worker.postMessage({ iterations: 1e9 }); // Send data to worker
+
+    worker.on('message', (result) => {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end(`Heavy computation finished: ${result}`);
+    });
+
+    worker.on('error', (err) => {
+      console.error(err);
+      res.writeHead(500);
+      res.end('Worker error');
+    });
+  } else {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Hello from main thread!');
+  }
+}).listen(3000, () => console.log('Server running on port 3000'));
+```
+
+### 2. Offloading to External Services
+
+For extremely heavy or specialized CPU tasks, it's often best to delegate them entirely to dedicated services.
+
+*   **Analogy:** Instead of your restaurant cooking *every* dish, for a special dessert, you send an order to a specialized bakery next door and they deliver the finished product.
+*   **Strategy:**
+    *   **Message Queues (e.g., RabbitMQ, Kafka):** Your Node.js API publishes a message describing the task to a queue. A separate, specialized worker service (which could be written in any language like Go or Python, better suited for computation) picks up the message, performs the work, and optionally sends the result back (e.g., via another queue or a callback).
+    *   **Dedicated Microservices:** Build a separate service specifically for CPU-intensive operations. Your Node.js API makes an HTTP request to this microservice, which handles the computation.
+
+### 3. Caching
+
+If the results of CPU-bound computations are frequently requested and don't change often, cache them.
+
+*   **Benefit:** Drastically reduces the need to re-run expensive calculations.
+*   **Implementation:** Use an in-memory cache (for smaller datasets) or external caching systems like Redis or Memcached.
+
+### 4. Algorithmic Optimization
+
+Before considering architectural changes, always examine the CPU-bound code itself.
+
+*   **Strategy:** Improve the efficiency of the algorithms or data structures used. A more efficient algorithm can turn a CPU-bound task into a much lighter one, sometimes eliminating the need for complex concurrency solutions.
+
+---
+
+**Summary:** While `cluster` helps distribute requests, `worker_threads` address CPU-bound tasks within a single Node.js process. For even greater scalability, consider offloading to external services or optimizing the code. Caching can avoid re-computation. Combining these strategies creates a robust and responsive API.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+673. ### Identify three common security vulnerabilities in Node.js applications and describe specific mitigation strategies for each.
+
+### Three Common Node.js Security Vulnerabilities and Mitigations
+
+Node.js applications, like any software, are susceptible to security vulnerabilities. Understanding and mitigating these threats is crucial for building robust and trustworthy systems. Here are three common ones:
+
+#### 1. Injection Attacks (e.g., SQL Injection)
+
+*   **Description**: This occurs when an attacker's input is incorrectly processed by the application, leading to unintended commands being executed. Imagine asking a robot to "clean the floor," but your input accidentally causes it to "clean the floor *and delete all files*." In Node.js, this often involves manipulating database queries or operating system commands.
+
+*   **Mitigation**: **Parameterized Queries** (for databases) or **Input Sanitization**.
+    *   Separate user input from the core command. This ensures the input is treated only as data, not as executable code.
+    *   **Code Example (SQL Injection prevention with `mysql2`):**
+        ```javascript
+        // BAD (vulnerable):
+        // const query = `SELECT * FROM users WHERE username = '${userInput}'`;
+
+        // GOOD (mitigated): User input is safely passed as a parameter
+        const query = 'SELECT * FROM users WHERE username = ?';
+        db.execute(query, [userInput]);
+        ```
+
+#### 2. Cross-Site Scripting (XSS)
+
+*   **Description**: XSS allows attackers to inject malicious client-side scripts (usually JavaScript) into web pages viewed by other users. If your application displays user-generated content directly without proper handling, an attacker could embed a script that steals user cookies or alters the page for other visitors.
+
+*   **Mitigation**: **Output Encoding** and **Content Security Policy (CSP)**.
+    *   Always encode or escape user-supplied data *before* rendering it in HTML. This turns potentially malicious `<script>` tags into harmless text. Use libraries like `DOMPurify` for sanitizing HTML.
+    *   A strong Content Security Policy (CSP) further restricts what scripts can run on your page.
+    *   **Code Example (conceptual output encoding):**
+        ```javascript
+        const userInput = "<script>alert('Hacked!');</script>";
+        // safeOutput becomes "&lt;script&gt;alert('Hacked!');&lt;/script&gt;"
+        const safeOutput = escapeHTML(userInput); // Using an encoding library
+        res.send(`<div>Welcome, ${safeOutput}</div>`);
+        ```
+
+#### 3. Insecure/Outdated Dependencies
+
+*   **Description**: Node.js applications heavily rely on third-party packages from npm. These packages can contain known security vulnerabilities, which attackers can exploit. It's like building your house with a pre-made wall component that has a known structural weakness.
+
+*   **Mitigation**: **Regular Auditing and Updates**.
+    *   Regularly scan your project's dependencies for known vulnerabilities.
+    *   **`npm audit`**: This built-in command scans your `package.json` for known security issues and often suggests fixes.
+    *   Keep your dependencies updated to their latest secure versions.
+    *   **Code Example:**
+        ```bash
+        npm audit         # Scans for vulnerabilities
+        npm audit fix     # Attempts to fix automatically by updating
+        ```
+
+### Summary
+
+Securing Node.js applications requires a proactive approach. By understanding common vulnerabilities like injection attacks, XSS, and insecure dependencies, and consistently applying mitigation strategies like parameterized queries, output encoding, and regular dependency audits, you can significantly enhance your application's security posture.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+674. ### Compare and contrast using `async/await` with traditional callback-based approaches for managing asynchronous operations in Node.js. Provide scenarios where one might be preferred over the other.
+
+Asynchronous operations in Node.js are tasks that take time to complete, like fetching data from a database or reading a file. Node.js is "non-blocking," meaning it doesn't wait for these tasks to finish; it processes other code and returns to the task later. This is crucial for performance.
+
+Let's compare two common ways to manage these operations:
+
+---
+
+### Traditional Callback-Based Approaches
+
+**Concept:**
+A callback is a function passed as an argument to another function, which is then executed *after* the main task has completed. Think of it like telling a friend, "Go buy groceries, and **call me back** when you're done so I can cook."
+
+**How it Works:**
+You start an asynchronous operation, and when it finishes (either successfully or with an error), your provided callback function is invoked with the results or error.
+
+**Pros:**
+*   **Fundamental:** The original and most basic way to handle async in Node.js.
+*   **Widely Supported:** Many older Node.js modules and APIs still use callbacks.
+
+**Cons:**
+*   **"Callback Hell" (Pyramid of Doom):** When you have several dependent asynchronous operations, nesting callbacks can lead to deeply indented, hard-to-read, and difficult-to-maintain code.
+*   **Error Handling:** Requires checking for an `error` parameter in *every* callback.
+
+**Code Example:**
+
+```javascript
+const fs = require('fs');
+
+fs.readFile('file1.txt', 'utf8', (err, data1) => {
+    if (err) return console.error(err);
+    console.log('File 1:', data1);
+
+    fs.readFile('file2.txt', 'utf8', (err, data2) => {
+        if (err) return console.error(err);
+        console.log('File 2:', data2);
+        // ... imagine more nested operations here
+    });
+});
+```
+
+---
+
+### `async/await`
+
+**Concept:**
+`async/await` is modern JavaScript syntax built on top of Promises that makes asynchronous code look and behave more like synchronous code, making it much easier to read and write.
+
+*   An `async` function is a function that implicitly returns a Promise.
+*   The `await` keyword can only be used inside an `async` function. It pauses the execution of the `async` function until the Promise it's `await`ing resolves (or rejects), then it returns the resolved value.
+
+**How it Works:**
+It allows you to "wait" for a Promise to settle before moving on to the next line of code *within the `async` function*, without blocking the entire Node.js event loop.
+
+**Pros:**
+*   **Readability:** Code looks sequential and much cleaner, avoiding "callback hell."
+*   **Easier Error Handling:** You can use standard `try...catch` blocks, just like synchronous code.
+*   **Debugging:** Stepping through `async/await` code in a debugger is more intuitive.
+
+**Cons:**
+*   **Requires Promises:** Only works with functions that return Promises. Older callback-based APIs need to be "promisified" (converted to return Promises).
+*   **Can be Misunderstood:** It pauses the *function's* execution, not the entire program.
+
+**Code Example:**
+
+```javascript
+const fs = require('fs').promises; // Using the Promise-based fs module
+
+async function readFiles() {
+    try {
+        const data1 = await fs.readFile('file1.txt', 'utf8');
+        console.log('File 1:', data1);
+
+        const data2 = await fs.readFile('file2.txt', 'utf8');
+        console.log('File 2:', data2);
+        // ... more sequential operations
+    } catch (err) {
+        console.error('An error occurred:', err);
+    }
+}
+
+readFiles();
+```
+
+---
+
+### Comparison and Preference Scenarios
+
+| Feature            | Traditional Callbacks                             | `async/await`                                        |
+| :----------------- | :------------------------------------------------ | :--------------------------------------------------- |
+| **Readability**    | Can lead to deeply nested "callback hell"         | Looks like synchronous code, much cleaner            |
+| **Error Handling** | Manual `if (err) return...` in each callback      | Standard `try...catch` blocks                        |
+| **Control Flow**   | Harder to reason about sequential steps           | Clearer, linear flow                                 |
+| **Foundation**     | Primitive, direct approach                        | Built on Promises (syntactic sugar)                  |
+
+**When to prefer `async/await`:**
+*   **Complex Sequences:** When you have multiple asynchronous operations that depend on each other.
+*   **New Code:** For building new features or applications, as it's the modern standard.
+*   **Improved Readability and Maintainability:** For cleaner, easier-to-understand code.
+
+**When to prefer traditional callbacks:**
+*   **Simple, Non-Sequential Events:** For simple event listeners (e.g., `eventEmitter.on('data', callback)`).
+*   **Legacy Codebases:** When working with older libraries or code that heavily relies on callbacks and isn't easily promisified.
+
+---
+
+### Summary
+
+While callbacks are fundamental to Node.js, `async/await` offers a significantly more readable, maintainable, and robust way to manage complex asynchronous operations, making it the preferred approach for modern Node.js development.
+
+**[⬆ Back to Top](#table-of-contents)**
+
+
+675. ### Describe the module resolution algorithm that Node.js follows when you `require('some-module')`. How does it locate core modules, `node_modules` packages, and local files?
+
+When you use `require('some-module')` in Node.js, the runtime needs to figure out *where* that module lives on your computer. This process is called **module resolution**, and Node.js follows a specific, predictable algorithm to locate the correct file.
+
+### Node.js Module Resolution Algorithm
+
+Node.js checks for modules in this order:
+
+1.  **Core Modules (Built-in)**
+    Node.js first checks if `some-module` is one of its **built-in core modules** (e.g., `fs` for file system, `http` for web servers, `path`). These modules are compiled directly into the Node.js binary and don't need to be installed.
+    *   **Example:** `require('fs')` will always load Node's built-in file system module.
+
+2.  **File Paths (Local Files)**
+    If it's not a core module, Node.js checks if `some-module` looks like a file path:
+    *   **Relative Paths:** If the string starts with `./` (current directory) or `../` (parent directory), Node.js treats it as a local file relative to the requiring file's location.
+        ```javascript
+        // In /app/server.js
+        require('./utils/helper.js'); // Looks for /app/utils/helper.js
+        require('../config.js');     // Looks for /config.js
+        ```
+    *   **Absolute Paths:** If it starts with `/` (root directory) or a Windows drive letter (e.g., `C:\`), it's treated as an absolute path.
+    *   **File Extensions:** If no extension is provided (e.g., `require('./helper')`), Node.js tries appending `.js`, then `.json`, then `.node` until a match is found.
+    *   **Directories as Modules:** If `require('./my-folder')` is used and `my-folder` is a directory, Node.js first looks for a `package.json` file inside `my-folder`. If found, it uses the file specified in the `main` field (e.g., `"main": "index.js"`). If no `package.json` or `main` field, it defaults to `index.js` inside `my-folder`.
+
+3.  **`node_modules` (Third-Party Packages)**
+    If `some-module` isn't a core module and doesn't look like a file path (i.e., it's a "bare" module name like `'lodash'` or `'express'`), Node.js assumes it's an installed package.
+    *   It starts searching for a `node_modules` directory in the **current directory** where the `require()` call originated.
+    *   If not found, it moves up to the **parent directory** and checks for `node_modules` there, and continues this process all the way up to the root directory.
+    *   **Example:** If `require('lodash')` is called from `/app/src/utils/file.js`:
+        1.  Looks in `/app/src/utils/node_modules/lodash`
+        2.  Looks in `/app/src/node_modules/lodash`
+        3.  Looks in `/app/node_modules/lodash`
+        4.  Looks in `/node_modules/lodash`
+    *   Once a `node_modules/some-module` directory is found, Node.js then looks for `package.json` inside it and uses its `main` field, or defaults to `index.js` if `main` is missing.
+
+### Summary
+
+Node.js resolves `require()` calls by prioritizing **core modules**, then checking **explicit or relative file paths**, and finally searching **`node_modules`** directories upwards from the current file's location. This systematic approach ensures modules are found consistently across projects.
 
 **[⬆ Back to Top](#table-of-contents)**
 
